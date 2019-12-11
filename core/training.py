@@ -3,7 +3,7 @@ import numpy as np
 from torch.backends import cudnn
 
 
-def train_model(model, loss, optimiser, epochs, train_gen, test_gen,
+def train_model(model, loss, optimiser, scheduler ,epochs, train_gen, test_gen,
                 timesteps, batch_size):
     ######## CUDA for PyTorch
     use_cuda = torch.cuda.is_available()
@@ -12,9 +12,10 @@ def train_model(model, loss, optimiser, epochs, train_gen, test_gen,
 
     model = model
     if torch.cuda.is_available():
+        print("We're running on GPU")
         model.cuda()
     #######
-
+    scheduler = scheduler
     optimiser = optimiser
     loss_fn = loss
 
@@ -49,7 +50,10 @@ def train_model(model, loss, optimiser, epochs, train_gen, test_gen,
             loss.backward()
 
             optimiser.step()
+
             batch_nr += 1
+        if scheduler is not None:
+            scheduler.step()
 
         batch_nr = 0
         for batch, labels in test_gen:
@@ -57,7 +61,6 @@ def train_model(model, loss, optimiser, epochs, train_gen, test_gen,
             labels = labels.float()
             # Transfer to GPU
             batch, labels = batch.to(device), labels.to(device)
-
             optimiser.zero_grad()
 
             y_pred_test = model(batch)

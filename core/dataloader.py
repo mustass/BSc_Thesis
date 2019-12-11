@@ -34,6 +34,7 @@ class DataLoader():
         '''
         Seq_len: total length, ie. the last gets to be the label
         '''
+        seq_len += 1
         data_x = []
         data_y = []
         for i in range(self.len_train - seq_len):
@@ -46,6 +47,7 @@ class DataLoader():
         '''
         Seq_len: total length, ie. the last gets to be the label
         '''
+        seq_len += 1
         data_x = []
         data_y = []
         for i in range(self.len_test - seq_len):

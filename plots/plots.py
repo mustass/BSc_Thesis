@@ -37,6 +37,8 @@ def plot_and_save(pred_train, pred_test, label_train, label_test, train_error, t
 
         save_path = path_create + '/' + 'model.pt'
         torch.save(trained_model.state_dict(), save_path)
+        with open(path_create+'/model_summary.txt', 'w+') as f:
+            f.write(str(trained_model))  # Python 3.x
         print("Model Saved")
 
     plt.plot(pred_train, label="Predictions on train set")
