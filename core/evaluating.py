@@ -20,7 +20,7 @@ def eval_model(trained_model, loss,train_dt, test_dt, timesteps):
                               'shuffle': False,
                               'drop_last': True,
                               'num_workers': 0}
-
+    trained_model.batch_size = eval_dataloader_params['batch_size']
     # Generators
     training_set = Dataset(train_dt)
 

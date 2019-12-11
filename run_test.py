@@ -31,14 +31,14 @@ network_params = {'input_dim': 2,  # As many as there are of columns in data
                   'dropout': 0,
                   'num_layers': 1
                   }
-epochs = 10
+epochs = 25
 Nice_model = Model(**network_params)
 Nice_loss = torch.nn.MSELoss()
 Nice_optimiser = torch.optim.Adam(Nice_model.parameters(), lr=0.005)
 Nice_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(Nice_optimiser,epochs)
 
 Nice_model_trained, loss_train, loss_test = train_model(Nice_model, Nice_loss, Nice_optimiser,Nice_scheduler ,epochs,training_generator,
-                                                       test_generator, timesteps, 1)
+                                                       test_generator, timesteps, dataloader_params['batch_size'])
 
 ys, ys_testing, loss_vals_test,loss_vals_train = eval_model(Nice_model_trained,Nice_loss, train_dt,test_dt,timesteps)
 
@@ -46,5 +46,5 @@ y_trainingm8= train_dt[1]
 y_testingm8 = test_dt[1]
 
 plot_and_save(ys,ys_testing,y_trainingm8, y_testingm8, loss_vals_train, loss_vals_test, False, Nice_model_trained,
-              'Nice_model_with_LRANNEAL_hidden_dim10')
+              'Nice_model_with_LRANNEAL_hidden_dim10_batchsize1')
 
