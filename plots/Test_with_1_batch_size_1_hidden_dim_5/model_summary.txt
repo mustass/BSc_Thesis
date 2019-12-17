@@ -1,0 +1,4 @@
+Model(
+  (LSTM): LSTM(2, 5)
+  (linear): Linear(in_features=5, out_features=1, bias=False)
+)

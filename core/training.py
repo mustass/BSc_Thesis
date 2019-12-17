@@ -3,8 +3,9 @@ import numpy as np
 from torch.backends import cudnn
 
 
-def train_model(model, loss, optimiser, scheduler ,epochs, train_gen, test_gen,
+def train_model(model, loss, optimiser, scheduler, epochs, train_gen, test_gen,
                 timesteps, batch_size):
+
     ######## CUDA for PyTorch
     use_cuda = torch.cuda.is_available()
     device = torch.device("cuda:0" if use_cuda else "cpu")
@@ -19,7 +20,7 @@ def train_model(model, loss, optimiser, scheduler ,epochs, train_gen, test_gen,
     optimiser = optimiser
     loss_fn = loss
 
-    # Track smthngs:
+    # Track losses:
 
     loss_vals_train = np.zeros((epochs, len(train_gen)))
     loss_vals_test = np.zeros((epochs, len(test_gen)))
@@ -30,13 +31,9 @@ def train_model(model, loss, optimiser, scheduler ,epochs, train_gen, test_gen,
         print("Epoch nr: " + str(epoch))
         batch_nr = 0
         for batch, labels in train_gen:
+            model.batch_size = batch_size
             batch = batch.view(timesteps, batch_size, -1)
             labels = labels.float()
-
-            # if batch_nr % 1000 == 0:
-            #    for name, param in model.named_parameters():
-            #        if param.requires_grad:
-            #            print(name, param.data)
 
             # Transfer to GPU
             batch, labels = batch.to(device), labels.to(device)
@@ -57,7 +54,8 @@ def train_model(model, loss, optimiser, scheduler ,epochs, train_gen, test_gen,
 
         batch_nr = 0
         for batch, labels in test_gen:
-            batch = batch.view(timesteps, batch_size, -1)
+            model.batch_size = 1
+            batch = batch.view(timesteps, 1, -1)
             labels = labels.float()
             # Transfer to GPU
             batch, labels = batch.to(device), labels.to(device)
