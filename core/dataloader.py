@@ -8,8 +8,8 @@ from torch.utils import data
 class DataLoader():
     """A class for loading and transforming data for the LSTM model"""
 
-    def __init__(self, filename, split, cols, label_col, normalise, start_from=None):
-        filename = '/home/s/Dropbox/KU/BSc Stas/Python/Data/Daily/' + filename
+    def __init__(self, path, split, cols, label_col, normalise, start_from=None):
+        filename = path
         dataframe = pd.read_csv(filename)
 
         if start_from is not None:
