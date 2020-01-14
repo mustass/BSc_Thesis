@@ -2,10 +2,6 @@ import os
 import shutil
 import sys
 
-# detect the current working directory and print it
-path = os.path.dirname(os.path.abspath(__file__))
-print("The current working directory is %s" % path)
-
 
 def yes_or_no(question):
     reply = str(input(question + ' (y/n): ')).lower().strip()
@@ -17,7 +13,7 @@ def yes_or_no(question):
         return yes_or_no("Uhhhh... please enter ")
 
 
-def create_folder(name_string):
+def create_folder(path, name_string):
     if name_string is not None:
         path_create = path + '/' + name_string
 

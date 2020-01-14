@@ -1,6 +1,6 @@
 from core.dataloader import *
 from torch.backends import cudnn
-
+from core.predict_sequence import *
 
 def eval_model(trained_model, loss,train_dt, test_dt, timesteps):
 
@@ -63,10 +63,11 @@ def eval_model(trained_model, loss,train_dt, test_dt, timesteps):
         ys_testing.append(y_pred_test.detach().cpu().numpy())
         loss_vals_test.append(loss.item())
 
+    pred_sequence(trained_model,test_set,timesteps,5,20)
 
     ys = np.array(ys)
     ys = np.reshape(ys, (ys.shape[0] * ys.shape[1], 1))
     ys_testing = np.array(ys_testing)
     ys_testing = np.reshape(ys_testing, (ys_testing.shape[0] * ys_testing.shape[1], 1))
 
-    return ys, ys_testing, loss_vals_test,loss_vals_train
+    return ys, ys_testing, loss_vals_test, loss_vals_train

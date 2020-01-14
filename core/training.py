@@ -105,6 +105,17 @@ def train_model(model, loss, optimiser, scheduler, max_epochs, train_gen, test_g
         }, is_best, folder)
 
     print('Total training time is: ' + str(total_time)+' seconds')
+    save_path = folder + '/' + 'last_model.pth.tar'
+    torch.save({
+            'epoch': start_epoch + epoch+1,
+            'state_dict': model.state_dict(),
+            'best_accuracy': best_accuracy
+        }, save_path)
+
+
+    with open(folder + '/model_summary.txt', 'w+') as f:
+        f.write(str(model))  # Python 3.x
+    print("Last Model Saved")
     return model, loss_vals_train, loss_vals_test
 
 
