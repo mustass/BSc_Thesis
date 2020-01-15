@@ -1,5 +1,6 @@
 from torch.backends import cudnn
 import torch
+
 def pred_sequence(model,test_set,timesteps,start,num_preds):
     """'
     This function takes the model weights and predicts a sequence.

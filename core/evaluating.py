@@ -1,6 +1,6 @@
 from core.dataloader import *
 from torch.backends import cudnn
-from core.predict_sequence import *
+from core.predict_sequence_old import *
 
 def eval_model(trained_model, loss,train_dt, test_dt, timesteps):
 
