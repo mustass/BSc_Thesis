@@ -5,7 +5,7 @@ from core.training import *
 from core.evaluating import *
 from plots.plots import *
 from core.create_folder import *
-from core.predict_sequence import *
+from core.pred_sequence import *
 import matplotlib.pyplot as plt
 import ray
 from ray import tune
@@ -21,7 +21,7 @@ print("The current working directory is %s" % path)
 ray.init()
 track.init()
 space = {
-    "lr": hp.loguniform('lr',0.0001,1),
+    "lr": hp.loguniform('lr', np.log(0.0001), np.log(1)),
     "timesteps": hp.choice('timesteps', range(10, 50, 5)),
     "num_layers": hp.choice('num_layers', range(1, 5, 1)),
     "hidden_dim": hp.choice('hidden_dim', range(1, 5, 1)),
@@ -37,7 +37,7 @@ sched = AsyncHyperBandScheduler(
 config = {
     "name": "exp",
     "stop": {
-        "error": -0.0001,
+        "error": -0.00001,
         "training_iteration": 150
     },
     "config": {"filename": '/home/s/Dropbox/KU/BSc Stas/Python/Data/Daily/DJI.csv',

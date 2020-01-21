@@ -5,7 +5,7 @@ from core.training import *
 from core.evaluating import *
 from plots.plots import *
 from core.create_folder import *
-from core.predict_sequence import *
+from core.pred_sequence import *
 import matplotlib.pyplot as plt
 
 # detect the current working directory and print it
