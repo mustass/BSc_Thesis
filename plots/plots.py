@@ -1,11 +1,10 @@
 import matplotlib.pyplot as plt
-import torch
 import numpy as np
 
 
 def plot_and_save(pred_train, pred_test, label_train, label_test,
                   train_error_mtrx, test_error_mtrx, train_error, test_error,
-                  show,model,folder):
+                  show, model, folder):
     if train_error_mtrx is not None:
         A = np.mean(train_error_mtrx, axis=1)
     if test_error_mtrx is not None:
@@ -17,7 +16,7 @@ def plot_and_save(pred_train, pred_test, label_train, label_test,
     if show:
         plt.show()
     if folder is not None:
-        plt.savefig(fname=folder + '/Train_vs_actual_'+str(model)+'.png')
+        plt.savefig(fname=folder + '/Train_vs_actual_' + str(model) + '.png')
 
     plt.clf()
 
@@ -26,7 +25,7 @@ def plot_and_save(pred_train, pred_test, label_train, label_test,
     if show:
         plt.show()
     if folder is not None:
-        plt.savefig(fname=folder + '/Train_loss_'+str(model)+'.png')
+        plt.savefig(fname=folder + '/Train_loss_' + str(model) + '.png')
     plt.clf()
 
     plt.plot(test_error, label="Loss for every sequence in Test Set")
@@ -34,7 +33,7 @@ def plot_and_save(pred_train, pred_test, label_train, label_test,
     if show:
         plt.show()
     if folder is not None:
-        plt.savefig(fname=folder + '/Test_loss_'+str(model)+'.png')
+        plt.savefig(fname=folder + '/Test_loss_' + str(model) + '.png')
     plt.clf()
 
     plt.plot(pred_test, label="Predictions on test set")
@@ -43,22 +42,37 @@ def plot_and_save(pred_train, pred_test, label_train, label_test,
     if show:
         plt.show()
     if folder is not None:
-        plt.savefig(fname=folder + '/Test_vs_actual_'+str(model)+'.png')
+        plt.savefig(fname=folder + '/Test_vs_actual_' + str(model) + '.png')
     plt.clf()
 
-    plt.plot(A, label="Avg loss per epoch on train set")
-    plt.plot(B, label="Avg loss per epoch on test set")
-    plt.legend()
-    if show:
-        plt.show()
-    if folder is not None:
-        plt.savefig(fname=folder + '/losses_per_epoch_'+str(model)+'.png')
-    plt.clf()
+    if train_error_mtrx is not None and test_error_mtrx is not None:
+        plt.plot(A, label="Avg loss per epoch on train set")
+        plt.plot(B, label="Avg loss per epoch on test set")
+        plt.legend()
+        if show:
+            plt.show()
+        if folder is not None:
+            plt.savefig(fname=folder + '/losses_per_epoch_' + str(model) + '.png')
+        plt.clf()
 
-    plt.plot(A, label="Avg loss per epoch on train set")
-    plt.legend()
-    if show:
-        plt.show()
-    if folder is not None:
-        plt.savefig(fname=folder + '/losses_per_epoch_only_train_'+str(model)+'.png')
-    plt.clf()
+    if train_error_mtrx is not None:
+        plt.plot(A, label="Avg loss per epoch on train set")
+        plt.legend()
+        if show:
+            plt.show()
+        if folder is not None:
+            plt.savefig(fname=folder + '/losses_per_epoch_only_train_' + str(model) + '.png')
+        plt.clf()
+
+
+def plot_results_multiple(predicted_data, true_data, prediction_len, folder):
+    fig = plt.figure(facecolor='white')
+    ax = fig.add_subplot(111)
+    ax.plot(true_data, label='True Data')
+    # Pad the list of predictions to shift it in the graph to it's correct start
+    for i, data in enumerate(predicted_data):
+        padding = [None for p in range(i * prediction_len)]
+        plt.plot(padding + data, label='Prediction')
+        plt.legend()
+    plt.savefig(fname=folder + '/Seq_prediction_' + '.png')
+    plt.show()

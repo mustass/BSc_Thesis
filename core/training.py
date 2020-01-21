@@ -2,12 +2,18 @@ import torch
 import numpy as np
 from torch.backends import cudnn
 import time
+from ray import tune
+from core.model import *
+from ray.tune import track
+from core.dataloader import *
+from core.create_folder import *
 
 
 def train_model(model, loss, optimiser, scheduler, max_epochs, train_gen, test_gen,
-                timesteps, batch_size, folder,resuming):
+                timesteps, batch_size, folder, resuming):
     ######## CUDA for PyTorch
     use_cuda = torch.cuda.is_available()
+
     device = torch.device("cuda:0" if use_cuda else "cpu")
     cudnn.benchmark = True
 
@@ -34,7 +40,7 @@ def train_model(model, loss, optimiser, scheduler, max_epochs, train_gen, test_g
 
     start_epoch = 0
     if resuming:
-        path_to_checkpoint = folder+'/checkpoint.pth.tar'
+        path_to_checkpoint = folder + '/checkpoint.pth.tar'
         cuda = torch.cuda.is_available()
         if cuda:
             checkpoint = torch.load(path_to_checkpoint)
@@ -48,14 +54,14 @@ def train_model(model, loss, optimiser, scheduler, max_epochs, train_gen, test_g
         model.load_state_dict(checkpoint['state_dict'])
         print("=> loaded checkpoint '{}' (trained for {} epochs)".format(path_to_checkpoint, checkpoint['epoch']))
 
-
-    for epoch in range(start_epoch, max_epochs,1):
+    for epoch in range(start_epoch, max_epochs, 1):
         print("Epoch nr: " + str(epoch))
         t0 = time.time()
         batch_nr = 0
         for batch, labels in train_gen:
             model.batch_size = batch_size
             batch = batch.view(timesteps, batch_size, -1)
+            # print(batch.shape)
             labels = labels.float()
 
             # Transfer to GPU
@@ -88,6 +94,9 @@ def train_model(model, loss, optimiser, scheduler, max_epochs, train_gen, test_g
             loss = loss_fn(y_pred_test, labels)
             loss_vals_test[epoch, batch_nr] = loss.item()
             batch_nr += 1
+
+        error = np.mean(loss_vals_test[epoch, :])
+
         print('The epoch took {} seconds'.format(time.time() - t0))
         total_time += time.time() - t0
 
@@ -99,24 +108,23 @@ def train_model(model, loss, optimiser, scheduler, max_epochs, train_gen, test_g
         best_accuracy = torch.FloatTensor(min(avg_loss_epoch_test[epoch], best_accuracy.numpy()))
 
         save_checkpoint({
-            'epoch': start_epoch + epoch+1,
+            'epoch': start_epoch + epoch + 1,
             'state_dict': model.state_dict(),
             'best_accuracy': best_accuracy
         }, is_best, folder)
 
-    print('Total training time is: ' + str(total_time)+' seconds')
+    print('Total training time is: ' + str(total_time) + ' seconds')
     save_path = folder + '/' + 'last_model.pth.tar'
     torch.save({
-            'epoch': start_epoch + epoch+1,
-            'state_dict': model.state_dict(),
-            'best_accuracy': best_accuracy
-        }, save_path)
-
+        'epoch': start_epoch + epoch + 1,
+        'state_dict': model.state_dict(),
+        'best_accuracy': best_accuracy
+    }, save_path)
 
     with open(folder + '/model_summary.txt', 'w+') as f:
         f.write(str(model))  # Python 3.x
     print("Last Model Saved")
-    return model, loss_vals_train, loss_vals_test
+    return model, loss_vals_train, loss_vals_test, error
 
 
 def save_checkpoint(state, is_best, folder):
@@ -127,3 +135,133 @@ def save_checkpoint(state, is_best, folder):
         torch.save(state, filename)  # save checkpoint
     else:
         print("=> Validation Accuracy did not improve")
+
+
+def train_hypopt(config):
+    dataset = DataLoader(path='/home/s/Dropbox/KU/BSc Stas/Python/Data/Daily/DJI.csv', split=0.80,
+                         cols=['Adj Close', 'Volume'],
+                         label_col='Adj Close', MinMax=False)
+
+    timesteps = config["timesteps"]
+    train_dt = dataset.get_train_data(timesteps, True)
+
+    test_dt = dataset.get_test_data(timesteps, True)
+
+    # Parameters
+    dataloader_params_train = {'batch_size': 1,
+                               'shuffle': True,
+                               'drop_last': True,
+                               'num_workers': 0}
+    # Parameters
+    dataloader_params_test = {'batch_size': 1,
+                              'shuffle': False,
+                              'drop_last': True,
+                              'num_workers': 0}
+    # Generators
+    training_set = Dataset(train_dt)
+    training_generator = data.DataLoader(training_set, **dataloader_params_train)
+    test_set = Dataset(test_dt)
+    test_generator = data.DataLoader(test_set, **dataloader_params_test)
+    epochs = 150
+    ### Saving:
+    folder_name = 'Run_w_' + str(config["timesteps"]) + 'timesteps_' + str(config["hidden_dim"]) + 'hiddenDim' + str(
+        config["num_layers"]) + 'layers'
+    new_folder = create_folder('/home/s/Dropbox/KU/BSc Stas/Python/Try_again' + '/results', folder_name)
+
+    # Model:
+    network_params = {'input_dim': 2,
+                      'hidden_dim': config["hidden_dim"],
+                      'batch_size': 1,
+                      'output_dim': 1,
+                      'dropout': 0,
+                      'num_layers': config["num_layers"]
+                      }
+    model = Model(**network_params)
+    loss = torch.nn.MSELoss()
+    optimiser = torch.optim.Adam(model.parameters(), lr=config['lr'])
+    # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimiser, epochs)
+    scheduler = None
+
+    # CUDA for PyTorch
+    use_cuda = torch.cuda.is_available()
+    device = torch.device("cuda:0" if use_cuda else "cpu")
+    cudnn.benchmark = True
+
+    model = model
+    if torch.cuda.is_available():
+        # print("We're running on GPU")
+        model.cuda()
+    #######
+
+    lwst_error = 1000
+    while True:
+        error, model = one_epoch_training(model, loss, optimiser,
+                                          scheduler, device,
+                                          training_generator,
+                                          test_generator, timesteps,
+                                          1)
+
+        is_best = bool(error < lwst_error)
+        print(
+            "error of the epoch: " + str(error) + " best accuracy before : " + str(lwst_error))
+        print("Best accuracy currently is: " + str(min(error, lwst_error)))
+        lwst_error = min(error, lwst_error)
+
+        save_checkpoint({
+            'epoch': 'tuning',
+            'state_dict': model.state_dict(),
+            'best_accuracy': lwst_error
+        }, is_best, new_folder)
+
+        track.log(error=-error)
+
+
+def one_epoch_training(model, loss, optimiser, scheduler, device, train_gen, test_gen,
+                       timesteps, batch_size):
+    t0 = time.time()
+    scheduler = scheduler
+    optimiser = optimiser
+    loss_fn = loss
+
+    # Track losses:
+    loss_vals_train = np.zeros((len(train_gen)))
+    loss_vals_test = np.zeros((len(test_gen)))
+
+    total_time = 0
+    batch_nr = 0
+    for batch, labels in train_gen:
+        model.batch_size = batch_size
+        batch = batch.view(timesteps, batch_size, -1)
+        # print(batch.shape)
+        labels = labels.float()
+        # Transfer to GPU
+        batch, labels = batch.to(device), labels.to(device)
+        optimiser.zero_grad()
+        preds = model(batch)
+        loss = loss_fn(preds, labels)
+        loss_vals_train[batch_nr] = loss.item()
+        loss.backward()
+        optimiser.step()
+
+        if scheduler is not None:
+            scheduler.step()
+        batch_nr += 1
+
+        batch_nr = 0
+    for batch, labels in test_gen:
+        model.batch_size = 1
+        batch = batch.view(timesteps, 1, -1)
+        labels = labels.float()
+        # Transfer to GPU
+        batch, labels = batch.to(device), labels.to(device)
+        optimiser.zero_grad()
+        y_pred_test = model(batch)
+        loss = loss_fn(y_pred_test, labels)
+        loss_vals_test[batch_nr] = loss.item()
+        batch_nr += 1
+
+    error = np.mean(loss_vals_test)
+    print('The epoch took {} seconds'.format(time.time() - t0))
+    total_time += time.time() - t0
+
+    return error, model

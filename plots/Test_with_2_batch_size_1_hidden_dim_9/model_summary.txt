@@ -1,4 +1,0 @@
-Model(
-  (LSTM): LSTM(2, 9, num_layers=2)
-  (linear): Linear(in_features=9, out_features=1, bias=False)
-)

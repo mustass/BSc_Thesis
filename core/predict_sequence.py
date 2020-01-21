@@ -1,28 +1,82 @@
 from torch.backends import cudnn
 import torch
-def pred_sequence(model,test_set,timesteps,start,num_preds):
-    """'
-    This function takes the model weights and predicts a sequence.
-    Ie. It takes the #timesteps before start as created in test_gen and predicts
-    a sequence of num_preds
-    """
+from core.dataloader import *
+from numpy import newaxis
+import numpy as np
 
-    batch, labels = test_set[start]
-    batch = batch.view(timesteps, 1, -1)
-    labels = torch.from_numpy(labels).type(torch.Tensor)
+"""
+These functions will do a naive sequence prediction
+Inputs:
+- model 
+- data
+- length of sequence
+Output: 
+- A vector of sequences 
 
+First function will treat the 'Volume' column by 
+averaging of the factual window.   
+
+Second function will treat the 'Volume' column by 
+repeating the last value for the whole sequence.  
+"""
+
+
+def predict_seq_avg(model, dataset, timesteps, seq_len):
+    print('[Model] Predicting Sequences Multiple...')
+    ######## CUDA for PyTorch
     use_cuda = torch.cuda.is_available()
     device = torch.device("cuda:0" if use_cuda else "cpu")
     cudnn.benchmark = True
 
-    # Transfer to GPU
-    batch, labels = batch.to(device), labels.to(device)
+    model = model
+    if torch.cuda.is_available():
+        model.cuda()
+    #######
 
-    pred_sequence = []
+    test_data = dataset
+    prediction_seqs = []
+    for i in range(int(len(test_data) / seq_len)):
+        curr_frame = test_data[i]
+        volume_avg = np.mean(curr_frame[:, 1])
+        curr_frame = torch.from_numpy(curr_frame).type(torch.Tensor).detach().view(timesteps, 1, -1).to(device)
+        predicted = []
 
-    for i in range(num_preds):
+        for j in range(seq_len):
+            prediction = model(curr_frame)[0, 0].detach()
+            curr_frame = curr_frame[1:]
+            new_row = torch.Tensor([prediction, volume_avg]).view(1, 1, 2).to(device)
+            curr_frame = torch.cat((curr_frame, new_row), dim=0)
+            predicted.append(prediction.cpu().numpy())
 
-        pred = model(batch)
-        pred_sequence.append(pred)
-        #print(batch)
-    #print(pred_sequence)
+        prediction_seqs.append(predicted)
+    return prediction_seqs
+
+def predict_seq_last(model, dataset, timesteps, seq_len):
+    print('[Model] Predicting Sequences Multiple...')
+    ######## CUDA for PyTorch
+    use_cuda = torch.cuda.is_available()
+    device = torch.device("cuda:0" if use_cuda else "cpu")
+    cudnn.benchmark = True
+
+    model = model
+    if torch.cuda.is_available():
+        model.cuda()
+    #######
+
+    test_data = dataset
+    prediction_seqs = []
+    for i in range(int(len(test_data) / seq_len)):
+        curr_frame = test_data[i]
+        volume = curr_frame[-1, 1]
+        curr_frame = torch.from_numpy(curr_frame).type(torch.Tensor).detach().view(timesteps, 1, -1).to(device)
+        predicted = []
+
+        for j in range(seq_len):
+            prediction = model(curr_frame)[0, 0].detach()
+            curr_frame = curr_frame[1:]
+            new_row = torch.Tensor([prediction, volume]).view(1, 1, 2).to(device)
+            curr_frame = torch.cat((curr_frame, new_row), dim=0)
+            predicted.append(prediction.cpu().numpy())
+
+        prediction_seqs.append(predicted)
+    return prediction_seqs
