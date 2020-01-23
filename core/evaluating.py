@@ -2,7 +2,8 @@ from core.dataloader import *
 from torch.backends import cudnn
 
 
-def eval_model(trained_model, loss, train_dt, test_dt, dataset, timesteps):
+def eval_model(trained_model, loss, dataset, timesteps, window_normalisation = True):
+
     # CUDA for PyTorch
     use_cuda = torch.cuda.is_available()
     device = torch.device("cuda:0" if use_cuda else "cpu")
@@ -12,6 +13,10 @@ def eval_model(trained_model, loss, train_dt, test_dt, dataset, timesteps):
     if torch.cuda.is_available():
         trained_model.cuda()
     #######
+    train_dt = dataset.get_train_data(timesteps, window_normalisation)
+    test_dt = dataset.get_test_data(timesteps, window_normalisation)
+
+
 
     loss_fn = loss
 

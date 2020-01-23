@@ -164,7 +164,7 @@ def train_hypopt(config):
     epochs = 150
     ### Saving:
     folder_name = 'Run_w_' + str(config["timesteps"]) + '_timesteps_' + str(config["hidden_dim"]) + '_hiddenDim_' + str(
-        config["num_layers"]) + '_layers_'+config["lr"] + "_LR"
+        config["num_layers"]) + '_layers_'+str(config["lr"]) + "_LR"
     new_folder = create_folder('/home/s/Dropbox/KU/BSc Stas/Python/Try_again' + '/results', folder_name)
 
     # Model:

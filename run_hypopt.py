@@ -22,7 +22,7 @@ ray.init()
 track.init()
 space = {
     "lr": hp.loguniform('lr', np.log(0.0001), np.log(1)),
-    "timesteps": hp.choice('timesteps', range(10, 50, 5)),
+    "timesteps": hp.choice('timesteps', range(10, 50, 1)),
     "num_layers": hp.choice('num_layers', range(1, 5, 1)),
     "hidden_dim": hp.choice('hidden_dim', range(1, 5, 1)),
 }
@@ -35,7 +35,7 @@ algo = HyperOptSearch(
 sched = AsyncHyperBandScheduler(
     metric='error', mode='max', grace_period=10)
 config = {
-    "name": "exp",
+    "name": "Jan21",
     "stop": {
         "error": -0.00001,
         "training_iteration": 150
@@ -47,7 +47,7 @@ config = {
 analysis = tune.run(
     train_hypopt,
     search_alg=algo,
-    num_samples= 1000,
+    num_samples= 50,
     scheduler=sched,
     resources_per_trial={
         "cpu": 8,

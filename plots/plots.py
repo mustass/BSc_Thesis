@@ -76,3 +76,5 @@ def plot_results_multiple(predicted_data, true_data, prediction_len, folder):
         plt.legend()
     plt.savefig(fname=folder + '/Seq_prediction_' + '.png')
     plt.show()
+
+
