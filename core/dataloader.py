@@ -31,53 +31,52 @@ class DataLoader():
 
         self.w_normalisation_p0_train = []
         self.w_normalisation_p0_test = []
-        self.seq_len = None
 
-
-    def get_train_data(self, seq_len,normalise):
+    def get_train_data(self, seq_len, normalise, num_forward=1):
         '''
         Seq_len: total length, ie. the last gets to be the label
         '''
-        self.seq_len = seq_len
-        seq_len += 1
+        seq_len = seq_len
+        seq_plus_forward = seq_len + num_forward
         data_x = []
         data_y = []
-        for i in range(self.len_train - seq_len):
-            x, y,  first_row= self._next_window(i, seq_len, 'train', normalise)
+        for i in range(self.len_train - seq_plus_forward):
+            x, y, first_row = self._next_window(i, seq_plus_forward, 'train', normalise, num_forward)
             self.w_normalisation_p0_train.append(first_row)
             data_x.append(x)
             data_y.append(y)
         return np.array(data_x), np.array(data_y)
 
-    def get_test_data(self, seq_len, normalise):
+    def get_test_data(self, seq_len, normalise, num_forward=1):
         '''
         Seq_len: total length, ie. the last gets to be the label
         '''
-        seq_len += 1
+        seq_len = seq_len
+        seq_plus_forward = seq_len + num_forward
         data_x = []
         data_y = []
-        for i in range(self.len_test - seq_len):
-            x, y,  first_row= self._next_window(i, seq_len, 'test', normalise)
+        for i in range(self.len_test - seq_plus_forward):
+            x, y, first_row = self._next_window(i, seq_plus_forward, 'test', normalise, num_forward)
             self.w_normalisation_p0_test.append(first_row)
             data_x.append(x)
             data_y.append(y)
         return np.array(data_x), np.array(data_y)
 
-    def _next_window(self, i, seq_len, split, normalise):
+    def _next_window(self, i, seq_len, split, normalise, num_forward):
         """Generates the next data window from the given index location i"""
         ''
         if split == 'train':
             window = self.data_train[i:i + seq_len]
             first_row = window[0, :]
             window = self.normalise_windows(window, single_window=True)[0] if normalise else window
-            x = window[:-1]
+            x = window[:seq_len - num_forward]
             y = window[-1, [self.label_col_indx]]
 
         if split == 'test':
             window = self.data_test[i:i + seq_len]
             first_row = window[0, :]
             window = self.normalise_windows(window, single_window=True)[0] if normalise else window
-            x = window[:-1]
+            x = window[:seq_len - num_forward]
             y = window[-1, [self.label_col_indx]]
 
         return x, y, first_row
@@ -95,8 +94,6 @@ class DataLoader():
                 normalised_window).T  # reshape and transpose array back into original multidimensional format
             normalised_data.append(normalised_window)
         return np.array(normalised_data)
-
-
 
 
 class Dataset(data.Dataset):
@@ -119,11 +116,9 @@ class Dataset(data.Dataset):
         return x, y
 
 
-def denormalise(mode,p_0, n_i, scaler):
-    assert(mode in ['MinMax', "window"])
+def denormalise(mode, p_0, n_i, scaler):
+    assert (mode in ['MinMax', "window"])
     if mode == "window":
         return p_0 * (n_i + 1)
     if mode == 'MinMax':
         return scaler.inverse_transform(np.array([n_i, 1]).reshape(1, 2))[0:0]
-
-

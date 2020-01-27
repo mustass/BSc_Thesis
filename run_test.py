@@ -6,7 +6,6 @@ from core.evaluating import *
 from plots.plots import *
 from core.create_folder import *
 from core.pred_sequence import *
-import matplotlib.pyplot as plt
 
 # detect the current working directory and print it
 path = os.path.dirname(os.path.abspath(__file__))
@@ -19,8 +18,8 @@ dataset = DataLoader(path='/home/s/Dropbox/KU/BSc Stas/Python/Data/Daily/DJI.csv
                      cols=['Adj Close', 'Volume'],
                      label_col='Adj Close', MinMax=False)
 timesteps = step
-train_dt = dataset.get_train_data(timesteps, True)
-test_dt = dataset.get_test_data(timesteps, True)
+train_dt = dataset.get_train_data(timesteps, True,5)
+test_dt = dataset.get_test_data(timesteps, True,5)
 
 # Parameters
 dataloader_params_train = {'batch_size': 1,
@@ -70,13 +69,10 @@ for model in ['last_model', 'checkpoint']:
                                                     loc: storage)
     Nice_model.load_state_dict(checkpoint['state_dict'])
     ys, ys_testing, ys__denormalised, ys_testing_denormalised, loss_vals_test, loss_vals_train = eval_model(Nice_model,
-                                                                                                            Nice_loss,
-                                                                                                            train_dt,
-                                                                                                            test_dt,
                                                                                                             dataset,
+                                                                                                            Nice_loss,
                                                                                                             timesteps)
-    train_dt = dataset.get_train_data(timesteps, False)
-    test_dt = dataset.get_test_data(timesteps, False)
+
     y_training = train_dt[1]
     y_testing = test_dt[1]
     plot_and_save(ys__denormalised, ys_testing_denormalised, y_training, y_testing, loss_train_mtrx, loss_test_mtrx,

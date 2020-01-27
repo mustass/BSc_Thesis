@@ -137,14 +137,14 @@ def save_checkpoint(state, is_best, folder):
 
 
 def train_hypopt(config):
-    dataset = DataLoader(path='/home/s/Dropbox/KU/BSc Stas/Python/Data/Daily/DJI.csv', split=0.80,
+    dataset = DataLoader(path=config["filename"], split=0.80,
                          cols=['Adj Close', 'Volume'],
                          label_col='Adj Close', MinMax=False)
 
     timesteps = config["timesteps"]
-    train_dt = dataset.get_train_data(timesteps, True)
+    train_dt = dataset.get_train_data(timesteps, config["window_normalisation"], config["num_forward"])
 
-    test_dt = dataset.get_test_data(timesteps, True)
+    test_dt = dataset.get_test_data(timesteps, config["window_normalisation"], config["num_forward"])
 
     # Parameters
     dataloader_params_train = {'batch_size': 1,
@@ -161,11 +161,10 @@ def train_hypopt(config):
     training_generator = data.DataLoader(training_set, **dataloader_params_train)
     test_set = Dataset(test_dt)
     test_generator = data.DataLoader(test_set, **dataloader_params_test)
-    epochs = 150
     ### Saving:
-    folder_name = 'Run_w_' + str(config["timesteps"]) + '_timesteps_' + str(config["hidden_dim"]) + '_hiddenDim_' + str(
+    folder_name = 'Predicting'+str(config["num_forward"])+'_w_' + str(config["timesteps"]) + '_timesteps_' + str(config["hidden_dim"]) + '_hiddenDim_' + str(
         config["num_layers"]) + '_layers_'+str(config["lr"]) + "_LR"
-    new_folder = create_folder('/home/s/Dropbox/KU/BSc Stas/Python/Try_again' + '/results', folder_name)
+    new_folder = create_folder(config["path"], folder_name)
 
     # Model:
     network_params = {'input_dim': 2,
@@ -178,7 +177,6 @@ def train_hypopt(config):
     model = Model(**network_params)
     loss = torch.nn.MSELoss()
     optimiser = torch.optim.Adam(model.parameters(), lr=config['lr'])
-    # scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimiser, epochs)
     scheduler = None
 
     # CUDA for PyTorch

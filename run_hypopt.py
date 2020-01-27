@@ -21,7 +21,7 @@ print("The current working directory is %s" % path)
 ray.init()
 track.init()
 space = {
-    "lr": hp.loguniform('lr', np.log(0.0001), np.log(1)),
+    "lr": hp.loguniform('lr', np.log(0.0001), np.log(0.3)),
     "timesteps": hp.choice('timesteps', range(10, 50, 1)),
     "num_layers": hp.choice('num_layers', range(1, 5, 1)),
     "hidden_dim": hp.choice('hidden_dim', range(1, 5, 1)),
@@ -35,7 +35,7 @@ algo = HyperOptSearch(
 sched = AsyncHyperBandScheduler(
     metric='error', mode='max', grace_period=10)
 config = {
-    "name": "Jan21",
+    "name": "Jan26_18forward",
     "stop": {
         "error": -0.00001,
         "training_iteration": 150
@@ -46,6 +46,7 @@ config = {
 
 analysis = tune.run(
     train_hypopt,
+    resume = True,
     search_alg=algo,
     num_samples= 50,
     scheduler=sched,

@@ -2,8 +2,7 @@ from core.dataloader import *
 from torch.backends import cudnn
 
 
-def eval_model(trained_model, loss, dataset, timesteps, window_normalisation = True):
-
+def eval_model(trained_model, loss, dataset, timesteps, num_forward=1, window_normalisation=True):
     # CUDA for PyTorch
     use_cuda = torch.cuda.is_available()
     device = torch.device("cuda:0" if use_cuda else "cpu")
@@ -13,10 +12,8 @@ def eval_model(trained_model, loss, dataset, timesteps, window_normalisation = T
     if torch.cuda.is_available():
         trained_model.cuda()
     #######
-    train_dt = dataset.get_train_data(timesteps, window_normalisation)
-    test_dt = dataset.get_test_data(timesteps, window_normalisation)
-
-
+    train_dt = dataset.get_train_data(timesteps, window_normalisation, num_forward)
+    test_dt = dataset.get_test_data(timesteps, window_normalisation, num_forward)
 
     loss_fn = loss
 
@@ -56,8 +53,9 @@ def eval_model(trained_model, loss, dataset, timesteps, window_normalisation = T
         loss = loss_fn(preds, labels)
         loss_vals_train.append(loss.item())
         ys.append(preds.detach().cpu().numpy())
-        ys__denormalised.append(
-            denormalise("window", dataset.w_normalisation_p0_train[batch_nr][0], ys[batch_nr], None))
+        if window_normalisation:
+            ys__denormalised.append(
+                denormalise("window", dataset.w_normalisation_p0_train[batch_nr][0], ys[batch_nr], None))
         batch_nr += 1
 
     batch_nr = 0
@@ -71,19 +69,25 @@ def eval_model(trained_model, loss, dataset, timesteps, window_normalisation = T
         y_pred_test = trained_model(batch)
         loss = loss_fn(y_pred_test, labels)
         ys_testing.append(y_pred_test.detach().cpu().numpy())
-        ys_testing_denormalised.append(
-            denormalise("window", dataset.w_normalisation_p0_test[batch_nr][0], ys_testing[batch_nr], None))
+        if window_normalisation:
+            ys_testing_denormalised.append(
+                denormalise("window", dataset.w_normalisation_p0_test[batch_nr][0], ys_testing[batch_nr], None))
         loss_vals_test.append(loss.item())
         batch_nr += 1
 
     ys = np.array(ys)
     ys = np.reshape(ys, (ys.shape[0] * ys.shape[1], 1))
-    ys__denormalised = np.array(ys__denormalised)
-    ys__denormalised = np.reshape(ys__denormalised, (ys__denormalised.shape[0] * ys__denormalised.shape[1], 1))
-    ys_testing_denormalised = np.array(ys_testing_denormalised)
-    ys_testing_denormalised = np.reshape(ys_testing_denormalised,
-                                         (ys_testing_denormalised.shape[0] * ys_testing_denormalised.shape[1], 1))
     ys_testing = np.array(ys_testing)
     ys_testing = np.reshape(ys_testing, (ys_testing.shape[0] * ys_testing.shape[1], 1))
+
+    if window_normalisation:
+        ys__denormalised = np.array(ys__denormalised)
+        ys__denormalised = np.reshape(ys__denormalised, (ys__denormalised.shape[0] * ys__denormalised.shape[1], 1))
+        ys_testing_denormalised = np.array(ys_testing_denormalised)
+        ys_testing_denormalised = np.reshape(ys_testing_denormalised,
+                                             (ys_testing_denormalised.shape[0] * ys_testing_denormalised.shape[1], 1))
+    else:
+        ys__denormalised = None
+        ys_testing_denormalised = None
 
     return ys, ys_testing, ys__denormalised, ys_testing_denormalised, loss_vals_test, loss_vals_train
