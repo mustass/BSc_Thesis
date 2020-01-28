@@ -57,6 +57,7 @@ class DataLoader():
         data_y = []
         for i in range(self.len_test - seq_plus_forward):
             x, y, first_row = self._next_window(i, seq_plus_forward, 'test', normalise, num_forward)
+            #print("update_p0")
             self.w_normalisation_p0_test.append(first_row)
             data_x.append(x)
             data_y.append(y)

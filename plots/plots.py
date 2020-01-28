@@ -70,7 +70,15 @@ def plot_results_multiple(predicted_data, true_data, prediction_len, folder):
     ax = fig.add_subplot(111)
     ax.plot(true_data, label='True Data')
     # Pad the list of predictions to shift it in the graph to it's correct start
-    for i, data in enumerate(predicted_data):
+    list = []
+    for i in range(predicted_data.shape[0]):
+        list.append(predicted_data[i,:])
+
+    for i, data in enumerate(list):
+        print(type(data))
+        data.tolist()
+        print(type(data))
+        print(i)
         padding = [None for p in range(i * prediction_len)]
         plt.plot(padding + data, label='Prediction')
         plt.legend()

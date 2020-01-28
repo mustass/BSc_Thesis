@@ -75,6 +75,7 @@ def eval_model(trained_model, loss, dataset, timesteps, num_forward=1, window_no
         loss_vals_test.append(loss.item())
         batch_nr += 1
 
+
     ys = np.array(ys)
     ys = np.reshape(ys, (ys.shape[0] * ys.shape[1], 1))
     ys_testing = np.array(ys_testing)

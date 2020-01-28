@@ -25,7 +25,7 @@ for num_forward in range(2, 18, 1):
     track.init()
     space = {
         "lr": hp.loguniform('lr', np.log(0.0001), np.log(0.3)),
-        "timesteps": hp.choice('timesteps', range(10, 50, 1)),
+        "timesteps": hp.choice('timesteps', range(5, 50, 1)),
         "num_layers": hp.choice('num_layers', range(1, 5, 1)),
         "hidden_dim": hp.choice('hidden_dim', range(1, 5, 1)),
     }
