@@ -19,8 +19,17 @@ dataset = DataLoader(path='/home/s/Dropbox/KU/BSc Stas/Python/Data/Daily/DJI.csv
                      cols=['Adj Close', 'Volume'],
                      label_col='Adj Close', MinMax=False)
 timesteps = step
-train_dt = dataset.get_train_data(timesteps, True, 1)
-test_dt = dataset.get_test_data(timesteps, True, 1)
+train_dt = dataset.get_train_data(timesteps, False, 3)
+test_dt = dataset.get_test_data(timesteps, False, 3)
+
+# Check if the data is using right labels with num forward:
+# print(test_dt[0][0], test_dt[1][0])
+# print(test_dt[0][1], test_dt[1][1])
+# print(test_dt[0][2], test_dt[1][2])
+# print(test_dt[0][3], test_dt[1][3])
+# print(test_dt[0][4], test_dt[1][4])
+# print(test_dt[0][5], test_dt[1][5])
+# print(test_dt[0][6], test_dt[1][6])
 
 # Parameters
 dataloader_params_train = {'batch_size': 1,
@@ -94,7 +103,7 @@ for model in ['checkpoint']:
     test_hybrid = hybrid_model(4, model_keys, config)
     test_hybrid.run_predictions(dataset, 3, True)
     sequences = test_hybrid.get_predictions()
-    print(sequences)
-
+    # test_dt = dataset.get_test_data(timesteps, False, 1)
+    y_testing = test_dt[1]
     # sequences = predict_seq_avg(Nice_model, test_dt[0], timesteps, 15)
-    plot_results_multiple(sequences, y_testing, 3, new_folder)
+    # plot_results_multiple(sequences, y_testing, 3, new_folder)

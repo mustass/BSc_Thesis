@@ -75,11 +75,8 @@ def plot_results_multiple(predicted_data, true_data, prediction_len, folder):
         list.append(predicted_data[i,:])
 
     for i, data in enumerate(list):
-        print(type(data))
-        data.tolist()
-        print(type(data))
-        print(i)
         padding = [None for p in range(i * prediction_len)]
+        data = data.tolist()
         plt.plot(padding + data, label='Prediction')
         plt.legend()
     plt.savefig(fname=folder + '/Seq_prediction_' + '.png')

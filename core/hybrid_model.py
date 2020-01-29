@@ -104,13 +104,13 @@ class hybrid_model():
             self.preds_dic[model_key] = preds
             self.denorm_preds_dic[model_key] = denorm_preds
 
-    def get_predictions(self, mode = 'denormalized'):
+    def get_predictions(self, mode='denormalized'):
         """
         This function will put predictions in order into array of shape:
         (num_predictions, prediction_len)
         """
         print(self.number_of_predictions_list)
-        assert(mode in ['denormalized', 'normalized'])
+        assert (mode in ['denormalized', 'normalized'])
         if mode == 'denormalized':
             predictions_dict = self.denorm_preds_dic
         else:
