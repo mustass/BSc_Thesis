@@ -18,10 +18,10 @@ from hyperopt import hp
 # detect the current working directory and print it
 path = '/home/s/Dropbox/KU/BSc Stas/Python/Try_again/results'
 
-for num_forward in range(2, 18, 1):
+for num_forward in range(14, 15, 1):
     today = date.today()
 
-    ray.init()
+    ray.init(ignore_reinit_error=True)
     track.init()
     space = {
         "lr": hp.loguniform('lr', np.log(0.0001), np.log(0.3)),
@@ -36,10 +36,10 @@ for num_forward in range(2, 18, 1):
     sched = AsyncHyperBandScheduler(
         metric='error', mode='max', grace_period=10)
     config = {
-        "name": str(today) + "_" + str(num_forward) + "forward",
+        "name": str(num_forward) + "forward",
         "stop": {
             "error": -0.00001,
-            "training_iteration": 150
+            "training_iteration": 100
         },
         "config": {"filename": '/home/s/Dropbox/KU/BSc Stas/Python/Data/Daily/DJI.csv',
                    "path": path,
@@ -49,7 +49,7 @@ for num_forward in range(2, 18, 1):
 
     analysis = tune.run(
         train_hypopt,
-        resume=False,
+        resume=True,
         search_alg=algo,
         num_samples=50,
         scheduler=sched,
@@ -58,7 +58,4 @@ for num_forward in range(2, 18, 1):
             "gpu": 1
         },
         **config)
-
     print("Best config is:", analysis.get_best_config(metric="error"))
-
-
