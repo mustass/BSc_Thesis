@@ -10,8 +10,9 @@ def plot_and_save(pred_train, pred_test, label_train, label_test,
     if test_error_mtrx is not None:
         B = np.mean(test_error_mtrx, axis=1)
 
-    plt.plot(pred_train, label="Predictions on train set")
+
     plt.plot(label_train, label="Actual data")
+    plt.plot(pred_train, label="Predictions on train set")
     plt.legend()
     if show:
         plt.show()
@@ -36,8 +37,9 @@ def plot_and_save(pred_train, pred_test, label_train, label_test,
         plt.savefig(fname=folder + '/Test_loss_' + str(model) + '.png')
     plt.clf()
 
-    plt.plot(pred_test, label="Predictions on test set")
+
     plt.plot(label_test, label="Actual data")
+    plt.plot(pred_test, label="Predictions on test set")
     plt.legend()
     if show:
         plt.show()

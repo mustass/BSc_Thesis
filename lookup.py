@@ -12,10 +12,8 @@ from plots.plots import *
 from core.create_folder import *
 from core.pred_sequence import *
 
-analysis = Analysis("~/ray_results/Jan23_20forward")
-print(analysis.get_best_config(metric="error", mode="max"))
 
-path_to_folder = '/home/s/Dropbox/KU/BSc Stas/Python/Try_again/results/Run_w_19_timesteps_1_hiddenDim_1_layers_0.003385040605715247_LR'
+path_to_folder = '/home/s/Dropbox/KU/BSc Stas/Python/Try_again/results/Predicting1_w_29_timesteps_7_hiddenDim_1_layers_0.0007255273517151122_LR'
 path_to_checkpoint = path_to_folder + '/' + 'checkpoint' + '.pth.tar'
 path_to_dataset = '/home/s/Dropbox/KU/BSc Stas/Python/Data/Daily/DJI.csv'
 
@@ -31,13 +29,13 @@ else:
 print("Best accuracy, aka. lowest error is: " + str(checkpoint['best_accuracy']))
 
 
-dataset = DataLoader(path_to_dataset, 0.80, ['Adj Close', 'Volume'],
-                     'Adj Close', False)
-timesteps = 19
-num_forward = 20
+dataset = DataLoader(path_to_dataset, 0.80, ['log_ret'],
+                     'log_ret', False)
+timesteps = 29
+num_forward = 1
 
-network_params = {'input_dim': 2,  # As many as there are of columns in data
-                  'hidden_dim': 1,
+network_params = {'input_dim': 1,  # As many as there are of columns in data
+                  'hidden_dim': 7,
                   'batch_size': 1,  # From dataloader_parameters
                   'output_dim': 1,
                   'dropout': 0,
@@ -58,13 +56,13 @@ test_dt = dataset.get_test_data(timesteps, False, num_forward)
 y_training = train_dt[1]
 y_testing = test_dt[1]
 
-plot_and_save(ys__denormalised, ys_testing_denormalised, y_training, y_testing, None, None,
+plot_and_save(ys, ys_testing, y_training, y_testing, None, None,
               loss_vals_train,
-              loss_vals_test, False, "Checkpoint_model",
+              loss_vals_test, True, "Checkpoint_model",
               path_to_folder + '/')
-sequences, sequences_denormalized = predict_seq_avg(Nice_model, dataset, timesteps, 25)
+#sequences, sequences_denormalized = predict_seq_avg(Nice_model, dataset, timesteps, 25)
 
 test_dt = dataset.get_test_data(timesteps, False)
 y_testing = test_dt[1]
-plot_results_multiple(sequences_denormalized, y_testing, 25,
-                      path_to_folder + '/')
+#plot_results_multiple(sequences_denormalized, y_testing, 25,
+#                      path_to_folder + '/')

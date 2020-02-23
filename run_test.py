@@ -7,7 +7,7 @@ from plots.plots import *
 from core.create_folder import *
 from core.pred_sequence import *
 from core.hybrid_model import *
-
+from hypopt_results import *
 # detect the current working directory and print it
 path = os.path.dirname(os.path.abspath(__file__))
 print("The current working directory is %s" % path)
@@ -16,15 +16,15 @@ h = 4
 step = 15
 
 dataset = DataLoader(path='/home/s/Dropbox/KU/BSc Stas/Python/Data/Daily/DJI.csv', split=0.80,
-                     cols=['Adj Close', 'Volume'],
-                     label_col='Adj Close', MinMax=False)
+                     cols=['log_ret'],
+                     label_col='log_ret', MinMax=False)
 timesteps = step
-train_dt = dataset.get_train_data(timesteps, False, 3)
-test_dt = dataset.get_test_data(timesteps, False, 3)
-
+train_dt = dataset.get_train_data(timesteps, False, 1)
+test_dt = dataset.get_test_data(timesteps, False, 1)
+print(train_dt[0:2])
 # Check if the data is using right labels with num forward:
-# print(test_dt[0][0], test_dt[1][0])
-# print(test_dt[0][1], test_dt[1][1])
+#print(test_dt[0][0], test_dt[1][0])
+#print(test_dt[0][1], test_dt[1][1])
 # print(test_dt[0][2], test_dt[1][2])
 # print(test_dt[0][3], test_dt[1][3])
 # print(test_dt[0][4], test_dt[1][4])
@@ -43,6 +43,7 @@ dataloader_params_test = {'batch_size': 1,
                           'num_workers': 0}
 # Generators
 training_set = Dataset(train_dt)
+print(training_set)
 training_generator = data.DataLoader(training_set, **dataloader_params_train)
 test_set = Dataset(test_dt)
 test_generator = data.DataLoader(test_set, **dataloader_params_test)
@@ -53,7 +54,7 @@ network_params = {'input_dim': 2,  # As many as there are of columns in data
                   'dropout': 0,
                   'num_layers': 1
                   }
-epochs = 1
+epochs = 2
 
 folder_name = 'Test_with_window_asfasfasassa_normalisation'
 new_folder = create_folder(path + '/results', folder_name)
@@ -67,7 +68,7 @@ Nice_model_trained, loss_train_mtrx, loss_test_mtrx, error = train_model(Nice_mo
                                                                          test_generator, timesteps,
                                                                          dataloader_params_train['batch_size'],
                                                                          new_folder, False)
-for model in ['checkpoint']:
+for model in ['last_model']:
     path_to_checkpoint = new_folder + '/' + model + '.pth.tar'
     cuda = torch.cuda.is_available()
     if cuda:
@@ -90,20 +91,20 @@ for model in ['checkpoint']:
                   loss_vals_test, False, model,
                   new_folder)
 
-    model_keys = ['1forward', '2forward', '3forward', '4forward']
-    config = {'1forward': {'hidden_dim': 4, 'num_layers': 1, 'timesteps': 15, 'state_dict': checkpoint['state_dict'],
-                           'num_forward': 1},
-              '2forward': {'hidden_dim': 4, 'num_layers': 1, 'timesteps': 10, 'state_dict': checkpoint['state_dict'],
-                           'num_forward': 2},
-              '3forward': {'hidden_dim': 4, 'num_layers': 1, 'timesteps': 19, 'state_dict': checkpoint['state_dict'],
-                           'num_forward': 3},
-              '4forward': {'hidden_dim': 4, 'num_layers': 1, 'timesteps': 21, 'state_dict': checkpoint['state_dict'],
-                           'num_forward': 4},
-              }
-    test_hybrid = hybrid_model(4, model_keys, config)
-    test_hybrid.run_predictions(dataset, 3, True)
+    #model_keys = ['1forward', '2forward', '3forward', '4forward']
+    #config = {'1forward': {'hidden_dim': 4, 'num_layers': 1, 'timesteps': 15, 'state_dict': checkpoint['state_dict'],
+    #                       'num_forward': 1},
+    #          '2forward': {'hidden_dim': 4, 'num_layers': 1, 'timesteps': 10, 'state_dict': checkpoint['state_dict'],
+    #                       'num_forward': 2},
+    #          '3forward': {'hidden_dim': 4, 'num_layers': 1, 'timesteps': 19, 'state_dict': checkpoint['state_dict'],
+    #                       'num_forward': 3},
+    #          '4forward': {'hidden_dim': 4, 'num_layers': 1, 'timesteps': 21, 'state_dict': checkpoint['state_dict'],
+    #                       'num_forward': 4},
+    #          }
+    test_hybrid = hybrid_model(16, model_keys, config_multiple_models)
+    test_hybrid.run_predictions(dataset, 10, True)
     sequences = test_hybrid.get_predictions()
     # test_dt = dataset.get_test_data(timesteps, False, 1)
     y_testing = test_dt[1]
     # sequences = predict_seq_avg(Nice_model, test_dt[0], timesteps, 15)
-    # plot_results_multiple(sequences, y_testing, 3, new_folder)
+    plot_results_multiple(sequences, y_testing, 10, new_folder)

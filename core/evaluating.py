@@ -2,7 +2,7 @@ from core.dataloader import *
 from torch.backends import cudnn
 
 
-def eval_model(trained_model, loss, dataset, timesteps, num_forward=1, window_normalisation=True):
+def eval_model(trained_model, loss, dataset, timesteps, num_forward=1, window_normalisation=False):
     # CUDA for PyTorch
     use_cuda = torch.cuda.is_available()
     device = torch.device("cuda:0" if use_cuda else "cpu")

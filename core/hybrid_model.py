@@ -37,8 +37,10 @@ class hybrid_model():
         # Compile the models:
         for model in range(num_models):
             # Create model key:
+            #print(model)
             model_key = self.model_keys[model]
             # Network parameters:
+            print(config[model_key])
             network_params = {'input_dim': 2,
                               'hidden_dim': config[model_key]["hidden_dim"],
                               'batch_size': 1,
@@ -48,6 +50,7 @@ class hybrid_model():
                               }
             # Compile model and recreate from checkpoint:
             model = Model(**network_params)
+            #print(config[model_key]['state_dict'])
             model.load_state_dict(config[model_key]['state_dict'])
             # Add model to the model_list dictionary:
             self.models_dict[model_key] = model

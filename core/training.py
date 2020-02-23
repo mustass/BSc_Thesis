@@ -95,7 +95,6 @@ def train_model(model, loss, optimiser, scheduler, max_epochs, train_gen, test_g
             batch_nr += 1
 
         error = np.mean(loss_vals_test[epoch, :])
-        print(error)
         print('The epoch took {} seconds'.format(time.time() - t0))
         total_time += time.time() - t0
 
@@ -138,14 +137,14 @@ def save_checkpoint(state, is_best, folder):
 
 def train_hypopt(config):
     dataset = DataLoader(path=config["filename"], split=0.80,
-                         cols=['Adj Close', 'Volume'],
-                         label_col='Adj Close', MinMax=False)
+                         cols=['log_ret'],
+                         label_col='log_ret', MinMax=False)
 
     timesteps = config["timesteps"]
     train_dt = dataset.get_train_data(timesteps, config["window_normalisation"], config["num_forward"])
 
     test_dt = dataset.get_test_data(timesteps, config["window_normalisation"], config["num_forward"])
-
+    #print(train_dt)
     # Parameters
     dataloader_params_train = {'batch_size': 1,
                                'shuffle': True,
@@ -167,7 +166,7 @@ def train_hypopt(config):
     new_folder = create_folder(config["path"], folder_name)
 
     # Model:
-    network_params = {'input_dim': 2,
+    network_params = {'input_dim': 1,
                       'hidden_dim': config["hidden_dim"],
                       'batch_size': 1,
                       'output_dim': 1,
@@ -244,7 +243,7 @@ def one_epoch_training(model, loss, optimiser, scheduler, device, train_gen, tes
             scheduler.step()
         batch_nr += 1
 
-        batch_nr = 0
+    batch_nr = 0
     for batch, labels in test_gen:
         model.batch_size = 1
         batch = batch.view(timesteps, 1, -1)
@@ -256,7 +255,6 @@ def one_epoch_training(model, loss, optimiser, scheduler, device, train_gen, tes
         loss = loss_fn(y_pred_test, labels)
         loss_vals_test[batch_nr] = loss.item()
         batch_nr += 1
-
     error = np.mean(loss_vals_test)
     print('The epoch took {} seconds'.format(time.time() - t0))
     total_time += time.time() - t0

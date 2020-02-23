@@ -8,17 +8,23 @@ from torch.utils import data
 class DataLoader():
     """A class for loading and transforming data for the LSTM model"""
 
-    def __init__(self, path, split, cols, label_col, MinMax, start_from=None):
+    def __init__(self, path, split, cols, label_col, MinMax, start_from=None, returns=True):
         filename = path
         dataframe = pd.read_csv(filename)
-
+        print(dataframe.head())
+        self.dates = dataframe['Date']
         if start_from is not None:
             dataframe.Date = pd.to_datetime(dataframe.Date)
             start = pd.to_datetime(start_from)
             dataframe = dataframe.loc[dataframe.Date > start]
 
+        if returns:
+            dataframe['log_ret'] = np.log(dataframe['Adj Close'] / dataframe['Adj Close'].shift(1))
+            dataframe = dataframe.iloc[1:]
+
         i_split = int(len(dataframe) * split)
         dataframe = dataframe.get(cols)
+        print(dataframe.head())
         self.data_train = dataframe.values[:i_split]
         self.data_test = dataframe.values[i_split:]
         self.len_train = len(self.data_train)
@@ -122,3 +128,66 @@ def denormalise(mode, p_0, n_i, scaler):
         return p_0 * (n_i + 1)
     if mode == 'MinMax':
         return scaler.inverse_transform(np.array([n_i, 1]).reshape(1, 2))[0:0]
+
+
+class miniDataLoader():
+    """
+    A class for loading and transforming data for the LSTM model
+    this one is for rolling window
+    """
+
+    def __init__(self, path, start_from, returns=True):
+        filename = path
+        dataframe = pd.read_csv(filename)
+        self.dates = dataframe['Date']
+        if start_from is not None:
+            dataframe.Date = pd.to_datetime(dataframe.Date)
+            start = pd.to_datetime(start_from)
+            if returns:
+                dataframe['log_ret'] = np.log(dataframe['Adj Close'] / dataframe['Adj Close'].shift(1))
+                dataframe = dataframe.iloc[1:]
+            dataframe = dataframe.loc[dataframe.Date > start]
+        else:
+            if returns:
+                dataframe['log_ret'] = np.log(dataframe['Adj Close'] / dataframe['Adj Close'].shift(1))
+                dataframe = dataframe.iloc[1:]
+
+        self.data_train = dataframe.get('log_ret').to_numpy()
+        self.len_train = len(self.data_train)
+
+    def get_data(self, seq_len, normalise, num_forward=1):
+        '''
+        Seq_len: total length, ie. the last gets to be the label
+        '''
+        seq_len = seq_len
+        seq_plus_forward = seq_len + num_forward
+        data_x = []
+        data_y = []
+        for i in range(self.len_train - seq_plus_forward):
+            x, y = self._next_window(i, seq_plus_forward, normalise, num_forward)
+            data_x.append(x)
+            data_y.append(y)
+        return np.array(data_x), np.array(data_y)
+
+    def _next_window(self, i, seq_len, normalise, num_forward):
+        """Generates the next data window from the given index location i"""
+        ''
+        window = self.data_train[i:i + seq_len]
+        window = self.normalise_windows(window, single_window=True)[0] if normalise else window
+        x = window[:seq_len - num_forward]
+        y = window[-1]
+        return x, y,
+
+    def normalise_windows(self, window_data, single_window=False):
+        '''Normalise window with a base value of zero'''
+        normalised_data = []
+        window_data = [window_data] if single_window else window_data
+        for window in window_data:
+            normalised_window = []
+            for col_i in range(window.shape[1]):
+                normalised_col = [((float(p) / float(window[0, col_i])) - 1) for p in window[:, col_i]]
+                normalised_window.append(normalised_col)
+            normalised_window = np.array(
+                normalised_window).T  # reshape and transpose array back into original multidimensional format
+            normalised_data.append(normalised_window)
+        return np.array(normalised_data)
