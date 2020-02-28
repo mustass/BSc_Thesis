@@ -134,4 +134,4 @@ model_config = {'hidden_dim': 7,
                 'num_layers': 1,
                 'lr': 0.0007255273517151122}
 
-lols = rolling_window(model_config, 'GSPC.csv', "2012-01-01", 1,29, 50, '/home/s/Dropbox/KU/BSc Stas/Python/Try_again/rolling_window_results/GSPC')
+lols = rolling_window(model_config, 'N225.csv', "2012-01-01", 1,29, 50, '/home/s/Dropbox/KU/BSc Stas/Python/Try_again/rolling_window_results/GSPC')

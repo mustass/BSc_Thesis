@@ -11,7 +11,9 @@ class DataLoader():
     def __init__(self, path, split, cols, label_col, MinMax, start_from=None, returns=True):
         filename = path
         dataframe = pd.read_csv(filename)
+        dataframe=dataframe.fillna(method='ffill')
         print(dataframe.head())
+        print(dataframe.isnull().sum())
         self.dates = dataframe['Date']
         if start_from is not None:
             dataframe.Date = pd.to_datetime(dataframe.Date)

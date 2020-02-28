@@ -12,13 +12,11 @@ from hypopt_results import *
 path = os.path.dirname(os.path.abspath(__file__))
 print("The current working directory is %s" % path)
 
-h = 4
-step = 15
-
-dataset = DataLoader(path='/home/s/Dropbox/KU/BSc Stas/Python/Data/Daily/DJI.csv', split=0.80,
+h = 7
+dataset = DataLoader(path='/home/s/Dropbox/KU/BSc Stas/Python/Data/Daily/GSPC.csv', split=0.7,
                      cols=['log_ret'],
                      label_col='log_ret', MinMax=False)
-timesteps = step
+timesteps = 29
 train_dt = dataset.get_train_data(timesteps, False, 1)
 test_dt = dataset.get_test_data(timesteps, False, 1)
 print(train_dt[0:2])
@@ -47,28 +45,28 @@ print(training_set)
 training_generator = data.DataLoader(training_set, **dataloader_params_train)
 test_set = Dataset(test_dt)
 test_generator = data.DataLoader(test_set, **dataloader_params_test)
-network_params = {'input_dim': 2,  # As many as there are of columns in data
+network_params = {'input_dim': 1,  # As many as there are of columns in data
                   'hidden_dim': h,
                   'batch_size': dataloader_params_train['batch_size'],  # From dataloader_parameters
                   'output_dim': 1,
                   'dropout': 0,
                   'num_layers': 1
                   }
-epochs = 2
+epochs = 150
 
-folder_name = 'Test_with_window_asfasfasassa_normalisation'
+folder_name = 'Training_best_one_on_GSPC'
 new_folder = create_folder(path + '/results', folder_name)
 Nice_model = Model(**network_params)
 Nice_loss = torch.nn.MSELoss()
-Nice_optimiser = torch.optim.Adam(Nice_model.parameters(), lr=0.05)
-Nice_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(Nice_optimiser, epochs)
+Nice_optimiser = torch.optim.Adam(Nice_model.parameters(), lr=0.0007255273517151122)
+#Nice_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(Nice_optimiser, epochs)
 Nice_model_trained, loss_train_mtrx, loss_test_mtrx, error = train_model(Nice_model, Nice_loss, Nice_optimiser,
-                                                                         Nice_scheduler, epochs,
+                                                                         None, epochs,
                                                                          training_generator,
                                                                          test_generator, timesteps,
                                                                          dataloader_params_train['batch_size'],
                                                                          new_folder, False)
-for model in ['last_model']:
+for model in ['checkpoint', "last_model"]:
     path_to_checkpoint = new_folder + '/' + model + '.pth.tar'
     cuda = torch.cuda.is_available()
     if cuda:
@@ -86,7 +84,7 @@ for model in ['last_model']:
                                                                                                             1)
     y_training = train_dt[1]
     y_testing = test_dt[1]
-    plot_and_save(ys__denormalised, ys_testing_denormalised, y_training, y_testing, loss_train_mtrx, loss_test_mtrx,
+    plot_and_save(ys, ys_testing, y_training, y_testing, loss_train_mtrx, loss_test_mtrx,
                   loss_vals_train,
                   loss_vals_test, False, model,
                   new_folder)
@@ -101,10 +99,10 @@ for model in ['last_model']:
     #          '4forward': {'hidden_dim': 4, 'num_layers': 1, 'timesteps': 21, 'state_dict': checkpoint['state_dict'],
     #                       'num_forward': 4},
     #          }
-    test_hybrid = hybrid_model(16, model_keys, config_multiple_models)
-    test_hybrid.run_predictions(dataset, 10, True)
-    sequences = test_hybrid.get_predictions()
-    # test_dt = dataset.get_test_data(timesteps, False, 1)
-    y_testing = test_dt[1]
-    # sequences = predict_seq_avg(Nice_model, test_dt[0], timesteps, 15)
-    plot_results_multiple(sequences, y_testing, 10, new_folder)
+    #test_hybrid = hybrid_model(16, model_keys, config_multiple_models)
+    #test_hybrid.run_predictions(dataset, 10, True)
+    #sequences = test_hybrid.get_predictions()
+    ## test_dt = dataset.get_test_data(timesteps, False, 1)
+    #y_testing = test_dt[1]
+    ## sequences = predict_seq_avg(Nice_model, test_dt[0], timesteps, 15)
+    #plot_results_multiple(sequences, y_testing, 10, new_folder)

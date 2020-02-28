@@ -25,7 +25,7 @@ for num_forward in range(1, 2, 1):
     track.init()
     space = {
         "lr": hp.loguniform('lr', np.log(0.0001), np.log(0.5)),
-        "timesteps": hp.choice('timesteps', range(5, 50, 1)),
+        "timesteps": hp.choice('timesteps', range(5, 40, 1)),
         "num_layers": hp.choice('num_layers', range(1, 10, 1)),
         "hidden_dim": hp.choice('hidden_dim', range(1, 10, 1)),
     }
@@ -37,12 +37,12 @@ for num_forward in range(1, 2, 1):
     sched = AsyncHyperBandScheduler(
         metric='error', mode='max', grace_period=20)
     config = {
-        "name": str(num_forward) + "forward_returns",
+        "name": str(num_forward) + "forward_returns_N225",
         "stop": {
             "error": -0.00001,
-            "training_iteration": 150
+            "training_iteration": 100
         },
-        "config": {"filename": '/home/s/Dropbox/KU/BSc Stas/Python/Data/Daily/DJI.csv',
+        "config": {"filename": '/home/s/Dropbox/KU/BSc Stas/Python/Data/Daily/N225.csv',
                    "path": path,
                    "window_normalisation": False,
                    "num_forward": num_forward, }
@@ -52,7 +52,7 @@ for num_forward in range(1, 2, 1):
         train_hypopt,
         resume=False,
         search_alg=algo,
-        num_samples=50,
+        num_samples=10,
         scheduler=sched,
         resources_per_trial={
             "cpu": 8,

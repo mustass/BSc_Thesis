@@ -63,7 +63,7 @@ def train_model(model, loss, optimiser, scheduler, max_epochs, train_gen, test_g
             batch = batch.view(timesteps, batch_size, -1)
             # print(batch.shape)
             labels = labels.float()
-
+            print(batch_nr)
             # Transfer to GPU
             batch, labels = batch.to(device), labels.to(device)
             optimiser.zero_grad()
@@ -137,7 +137,7 @@ def save_checkpoint(state, is_best, folder):
 
 def train_hypopt(config):
     dataset = DataLoader(path=config["filename"], split=0.80,
-                         cols=['log_ret'],
+                         cols=['log_ret'],start_from= "1985-01-01",
                          label_col='log_ret', MinMax=False)
 
     timesteps = config["timesteps"]
@@ -162,7 +162,7 @@ def train_hypopt(config):
     test_generator = data.DataLoader(test_set, **dataloader_params_test)
     ### Saving:
     folder_name = 'Predicting'+str(config["num_forward"])+'_w_' + str(config["timesteps"]) + '_timesteps_' + str(config["hidden_dim"]) + '_hiddenDim_' + str(
-        config["num_layers"]) + '_layers_'+str(config["lr"]) + "_LR"
+        config["num_layers"]) + '_layers_'+str(config["lr"]) + "_LR_N225"
     new_folder = create_folder(config["path"], folder_name)
 
     # Model:

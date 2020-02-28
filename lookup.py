@@ -15,7 +15,7 @@ from core.pred_sequence import *
 
 path_to_folder = '/home/s/Dropbox/KU/BSc Stas/Python/Try_again/results/Predicting1_w_29_timesteps_7_hiddenDim_1_layers_0.0007255273517151122_LR'
 path_to_checkpoint = path_to_folder + '/' + 'checkpoint' + '.pth.tar'
-path_to_dataset = '/home/s/Dropbox/KU/BSc Stas/Python/Data/Daily/DJI.csv'
+path_to_dataset = '/home/s/Dropbox/KU/BSc Stas/Python/Data/Daily/IXIC.csv'
 
 cuda = torch.cuda.is_available()
 if cuda:
@@ -52,7 +52,7 @@ ys, ys_testing, ys__denormalised, ys_testing_denormalised, loss_vals_test, loss_
                                                                                                         num_forward)
 train_dt = dataset.get_train_data(timesteps, False, num_forward)
 test_dt = dataset.get_test_data(timesteps, False, num_forward)
-
+print(np.sqrt(np.mean(loss_vals_test)))
 y_training = train_dt[1]
 y_testing = test_dt[1]
 
