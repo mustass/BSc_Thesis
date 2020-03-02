@@ -8,7 +8,7 @@ from torch.utils import data
 class DataLoader():
     """A class for loading and transforming data for the LSTM model"""
 
-    def __init__(self, path, split, cols, label_col, MinMax, start_from=None, returns=True):
+    def __init__(self, path, split, cols, label_col, MinMax, start_from=None, end=None, returns=True):
         filename = path
         dataframe = pd.read_csv(filename)
         dataframe=dataframe.fillna(method='ffill')
@@ -19,6 +19,11 @@ class DataLoader():
             dataframe.Date = pd.to_datetime(dataframe.Date)
             start = pd.to_datetime(start_from)
             dataframe = dataframe.loc[dataframe.Date > start]
+
+        if end is not None:
+            dataframe.Date = pd.to_datetime(dataframe.Date)
+            end = pd.to_datetime(end)
+            dataframe = dataframe.loc[dataframe.Date < end]
 
         if returns:
             dataframe['log_ret'] = np.log(dataframe['Adj Close'] / dataframe['Adj Close'].shift(1))
@@ -141,6 +146,7 @@ class miniDataLoader():
     def __init__(self, path, start_from, returns=True):
         filename = path
         dataframe = pd.read_csv(filename)
+        dataframe = dataframe.fillna(method='ffill')
         self.dates = dataframe['Date']
         if start_from is not None:
             dataframe.Date = pd.to_datetime(dataframe.Date)

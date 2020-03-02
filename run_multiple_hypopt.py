@@ -15,44 +15,41 @@ from ray.tune.schedulers import AsyncHyperBandScheduler
 from ray.tune.suggest.hyperopt import HyperOptSearch
 from hyperopt import hp
 
-# detect the current working directory and print it
-path = '/home/s/Dropbox/KU/BSc Stas/Python/Try_again/results'
 
-for num_forward in range(1, 2, 1):
+path = '/home/s/Dropbox/KU/BSc Stas/Python/Try_again/results/returns/hyperopt'
+
+for dataset in ["DJI", "GSPC", "IXIC", "N225"]:
     today = date.today()
-
     ray.init(ignore_reinit_error=True)
     track.init()
     space = {
         "lr": hp.loguniform('lr', np.log(0.0001), np.log(0.5)),
         "timesteps": hp.choice('timesteps', range(5, 40, 1)),
-        "num_layers": hp.choice('num_layers', range(1, 10, 1)),
-        "hidden_dim": hp.choice('hidden_dim', range(1, 10, 1)),
+        "num_layers": hp.choice('num_layers', range(1, 5, 1)),
+        "hidden_dim": hp.choice('hidden_dim', range(1, 15, 1)),
+        "dropout": hp.uniform('dropout', 0.0, 0.5),
     }
-
     algo = HyperOptSearch(
-        space, max_concurrent=4, metric="error", mode="max"
+        space, max_concurrent=2, metric="error", mode="max"
     )
-
     sched = AsyncHyperBandScheduler(
-        metric='error', mode='max', grace_period=20)
+        metric='error', mode='max', grace_period=15)
     config = {
-        "name": str(num_forward) + "forward_returns_N225",
+        "name": "1_forward_returns_"+dataset,
         "stop": {
-            "error": -0.00001,
+            "error": -0.000001,
             "training_iteration": 100
         },
-        "config": {"filename": '/home/s/Dropbox/KU/BSc Stas/Python/Data/Daily/N225.csv',
-                   "path": path,
+        "config": {"filename": '/home/s/Dropbox/KU/BSc Stas/Python/Data/Daily/'+dataset+'.csv',
+                   "path": path+'/'+dataset,
                    "window_normalisation": False,
-                   "num_forward": num_forward, }
+                   "num_forward": 1, }
     }
-
     analysis = tune.run(
         train_hypopt,
         resume=False,
         search_alg=algo,
-        num_samples=10,
+        num_samples=25,
         scheduler=sched,
         resources_per_trial={
             "cpu": 8,

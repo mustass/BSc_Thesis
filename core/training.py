@@ -137,14 +137,13 @@ def save_checkpoint(state, is_best, folder):
 
 def train_hypopt(config):
     dataset = DataLoader(path=config["filename"], split=0.80,
-                         cols=['log_ret'],start_from= "1985-01-01",
+                         cols=['log_ret'], start_from= "1985-01-01", end = "1995-01-01",
                          label_col='log_ret', MinMax=False)
 
     timesteps = config["timesteps"]
     train_dt = dataset.get_train_data(timesteps, config["window_normalisation"], config["num_forward"])
 
     test_dt = dataset.get_test_data(timesteps, config["window_normalisation"], config["num_forward"])
-    #print(train_dt)
     # Parameters
     dataloader_params_train = {'batch_size': 1,
                                'shuffle': True,
@@ -161,8 +160,8 @@ def train_hypopt(config):
     test_set = Dataset(test_dt)
     test_generator = data.DataLoader(test_set, **dataloader_params_test)
     ### Saving:
-    folder_name = 'Predicting'+str(config["num_forward"])+'_w_' + str(config["timesteps"]) + '_timesteps_' + str(config["hidden_dim"]) + '_hiddenDim_' + str(
-        config["num_layers"]) + '_layers_'+str(config["lr"]) + "_LR_N225"
+    folder_name = str(config["num_forward"])+'_forward_usng_' + str(config["timesteps"]) + '_timesteps_' + str(config["hidden_dim"]) + '_hiddenDim_' + str(
+        config["num_layers"]) + '_layers_'+str(config["lr"]) + "_LR"
     new_folder = create_folder(config["path"], folder_name)
 
     # Model:
@@ -170,7 +169,7 @@ def train_hypopt(config):
                       'hidden_dim': config["hidden_dim"],
                       'batch_size': 1,
                       'output_dim': 1,
-                      'dropout': 0,
+                      'dropout': config["dropout"],
                       'num_layers': config["num_layers"]
                       }
     model = Model(**network_params)

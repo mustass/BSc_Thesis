@@ -20,7 +20,7 @@ def save_checkpoint(state, i, is_best, folder):
         #print("=> Accuracy did not improve")
 
 
-def rolling_window(model_config, datasetName, start_from,
+def rolling_window(model_config, datasetName, start_from, restart, restart_window,
                    window_length, timesteps, max_epochs, folder):
     ### Model:
 
@@ -38,8 +38,7 @@ def rolling_window(model_config, datasetName, start_from,
         model.cuda()
 
     ### Model end
-
-    path = '/home/s/Dropbox/KU/BSc Stas/Python/Data/Daily/' + datasetName
+    path = '/content/drive/My Drive/BSc_work/data/' + datasetName+'.csv'
     dataset = miniDataLoader(path, start_from)
 
     train_dt = dataset.get_data(timesteps, False, 1)
@@ -67,37 +66,48 @@ def rolling_window(model_config, datasetName, start_from,
         avg_loss_epoch = np.zeros((max_epochs, 1))
         best_accuracy = torch.FloatTensor([1000])
 
-        for epoch in range(max_epochs):
-            #print("Epoch nr: " + str(epoch))
-            loss_vals = np.zeros((max_epochs, len(training_windows_generator)))
-            batch_nr = 0
-            for batch, labels in training_windows_generator:
-                model.batch_size = 1
-                batch = batch.view(timesteps, 1, -1)
-                # print(batch.shape)
-                labels = labels.float()
+        if i >= restart_window:
+          restart = False
 
-                # Transfer to GPU
-                batch, labels = batch.to(device), labels.to(device)
-                optimiser.zero_grad()
+        if restart is False:
+          for epoch in range(max_epochs):
+              #print("Epoch nr: " + str(epoch))
+              loss_vals = np.zeros((max_epochs, len(training_windows_generator)))
+              batch_nr = 0
+              for batch, labels in training_windows_generator:
+                  model.batch_size = 1
+                  batch = batch.view(timesteps, 1, -1)
+                  labels = labels.float()
 
-                preds = model(batch)
-                loss = loss_fn(preds.view(-1), labels)
-                loss_vals[epoch, batch_nr] = loss.item()
-                loss.backward()
-                optimiser.step()
+                  # Transfer to GPU
+                  batch, labels = batch.to(device), labels.to(device)
+                  optimiser.zero_grad()
+                  preds = model(batch)
+                  loss = loss_fn(preds.view(-1), labels)
+                  loss_vals[epoch, batch_nr] = loss.item()
+                  #if i ==1078:
+                  #  print("Batch nan")
+                  # print(torch.isnan(batch).any())
+                  #  print("Preds nan")
+                  #  print(torch.isnan(preds))
+                  #  print("Labels nan")
+                  #  print(torch.isnan(labels))
+                  #  print("Loss nan")
+                  #  print(torch.isnan(loss))
+                  loss.backward()
+                  optimiser.step()
 
-                batch_nr += 1
-            avg_loss_epoch[epoch] = np.mean(loss_vals[epoch, :])
-            is_best = bool(avg_loss_epoch[epoch] < best_accuracy.numpy())
+                  batch_nr += 1
+              avg_loss_epoch[epoch] = np.mean(loss_vals[epoch, :])
+              is_best = bool(avg_loss_epoch[epoch] < best_accuracy.numpy())
 
-            best_accuracy = torch.FloatTensor(min(avg_loss_epoch[epoch], best_accuracy.numpy()))
-            #print(best_accuracy)
-            save_checkpoint({
-                'epoch': 0 + epoch + 1,
-                'state_dict': model.state_dict(),
-                'best_accuracy': best_accuracy
-            }, i,is_best, folder)
+              best_accuracy = torch.FloatTensor(min(avg_loss_epoch[epoch], best_accuracy.numpy()))
+              #print(best_accuracy)
+              save_checkpoint({
+                  'epoch': 0 + epoch + 1,
+                  'state_dict': model.state_dict(),
+                  'best_accuracy': best_accuracy
+              }, i,is_best, folder)
 
         path_to_checkpoint = folder + '/' + 'checkpoint' + str(i) + '.pth.tar'
         checkpoint = torch.load(path_to_checkpoint)
@@ -105,12 +115,13 @@ def rolling_window(model_config, datasetName, start_from,
         test_seq = torch.from_numpy(test_window[0]).float().view(timesteps, 1, -1).to(device)
         predictions.append(model(test_seq))
         true_labels.append(test_window[1])
+        output = (predictions, true_labels)
+        file_output = open('/content/drive/My Drive/BSc_work/bsc_lstm/rolling_window_results_3yr/'+datasetName+'/last_pickle_1.obj', 'wb')
+        pickle.dump(output, file_output)
         print('The window took {} seconds'.format(time.time() - t0))
         i += 1
 
     output = (predictions, true_labels)
-    file_output = open('/home/s/Dropbox/KU/BSc Stas/Python/Try_again/rolling_window_results/DJI/output'+str(datasetName)+'.obj', 'wb')
-    pickle.dump(output, file_output)
     return output
 
 def give_me_model(config):
@@ -128,10 +139,10 @@ def give_me_model(config):
 
 
 ### Test run:
-
-model_config = {'hidden_dim': 7,
-                'batch_size': 1,
-                'num_layers': 1,
-                'lr': 0.0007255273517151122}
-
-lols = rolling_window(model_config, 'N225.csv', "2012-01-01", 1,29, 50, '/home/s/Dropbox/KU/BSc Stas/Python/Try_again/rolling_window_results/GSPC')
+#
+# model_config = {'hidden_dim': 7,
+#                'batch_size': 1,
+#                'num_layers': 1,
+#                'lr': 0.0007255273517151122}
+#
+# lols = rolling_window(model_config, 'GSPC.csv', "2012-01-01", 3 ,29, 50, '/home/s/Dropbox/KU/BSc Stas/Python/Try_again/rolling_window_results_3yr/GSPC')
