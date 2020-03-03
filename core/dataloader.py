@@ -24,16 +24,26 @@ class DataLoader():
             end = pd.to_datetime(end)
             dataframe = dataframe.loc[dataframe.Date < end]
 
+        self.dates = dataframe['Date']
+
         if returns:
             dataframe['log_ret'] = np.log(dataframe['Adj Close'] / dataframe['Adj Close'].shift(1))
             dataframe = dataframe.iloc[1:]
 
-        i_split = int(len(dataframe) * split)
         dataframe = dataframe.get(cols)
-        self.data_train = dataframe.values[:i_split]
-        self.data_test = dataframe.values[i_split:]
+        if split is not None:
+            i_split = int(len(dataframe) * split)
+            print(self.dates[i_split])
+            self.data_train = dataframe.values[:i_split]
+            self.data_test = dataframe.values[i_split:]
+            self.len_test = len(self.data_test)
+
+        if split is None:
+            self.data_train = dataframe.values
+
+
         self.len_train = len(self.data_train)
-        self.len_test = len(self.data_test)
+
         self.label_col_indx = (dataframe.columns.get_loc(label_col))  # Get index of label column
         if MinMax:
             self.scaler = MinMaxScaler()

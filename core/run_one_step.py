@@ -8,10 +8,10 @@ from plots.plots import *
 import pickle
 from core.create_folder import *
 
-for dt in ["GSPC", "DJI", "IXIC", "N225"]:
+for dt in ["DJI"]:
     folder = '/home/s/Dropbox/KU/BSc Stas/Python/Try_again/results/returns/one_step/'+ dt
-    dataset = DataLoader(path='/home/s/Dropbox/KU/BSc Stas/Python/Data/Daily/'+dt+'.csv',
-                         split=0.7, cols=['log_ret'], label_col='log_ret', MinMax=False)
+    dataset = DataLoader(path='/home/s/Dropbox/KU/BSc Stas/Python/Data/Daily/'+dt+'.csv', end="2009-04-29",
+                         split=0.8, cols=['log_ret'], label_col='log_ret', MinMax=False)
 
     config = configs_df.filter(like= str(dt), axis= 0)
     timesteps = int(config['Timesteps'])

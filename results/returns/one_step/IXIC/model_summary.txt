@@ -1,0 +1,4 @@
+Model(
+  (LSTM): LSTM(1, 2, dropout=0.4049558310874882)
+  (linear): Linear(in_features=2, out_features=1, bias=False)
+)
