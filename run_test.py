@@ -41,7 +41,6 @@ dataloader_params_test = {'batch_size': 1,
                           'num_workers': 0}
 # Generators
 training_set = Dataset(train_dt)
-print(training_set)
 training_generator = data.DataLoader(training_set, **dataloader_params_train)
 test_set = Dataset(test_dt)
 test_generator = data.DataLoader(test_set, **dataloader_params_test)

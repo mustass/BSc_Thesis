@@ -63,7 +63,6 @@ def train_model(model, loss, optimiser, scheduler, max_epochs, train_gen, test_g
             batch = batch.view(timesteps, batch_size, -1)
             # print(batch.shape)
             labels = labels.float()
-            print(batch_nr)
             # Transfer to GPU
             batch, labels = batch.to(device), labels.to(device)
             optimiser.zero_grad()

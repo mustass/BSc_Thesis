@@ -12,7 +12,6 @@ class DataLoader():
         filename = path
         dataframe = pd.read_csv(filename)
         dataframe=dataframe.fillna(method='ffill')
-        print(dataframe.head())
         print(dataframe.isnull().sum())
         self.dates = dataframe['Date']
         if start_from is not None:
@@ -31,7 +30,6 @@ class DataLoader():
 
         i_split = int(len(dataframe) * split)
         dataframe = dataframe.get(cols)
-        print(dataframe.head())
         self.data_train = dataframe.values[:i_split]
         self.data_test = dataframe.values[i_split:]
         self.len_train = len(self.data_train)

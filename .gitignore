@@ -1,5 +1,6 @@
+/old_results
 /results
-/prev_efforts
+/core/prev_efforts
 /core/__pycache__
 .idea/
 /plots/__pycache__
