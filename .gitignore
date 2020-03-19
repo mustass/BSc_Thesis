@@ -1,5 +1,5 @@
-/old_results
-/core/prev_efforts
-/core/__pycache__
-.idea/
-/plots/__pycache__
+Python/__pycache__
+Python/utils/__pycache__
+Python/core/__pycache__
+Python/core/prev_efforts
+Python/plots/__pycache__

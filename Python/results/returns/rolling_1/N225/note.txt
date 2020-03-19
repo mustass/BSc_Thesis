@@ -1,0 +1,1 @@
+N225 will have to borrow first 121 checkpoits from N225 rolling window 3.

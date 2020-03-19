@@ -1,0 +1,10 @@
+GSPC config: 
+
+
+LR : 0.00012277033326270226
+Timesteps: 26
+Num layers: 1
+Hidden dim: 14
+Dropout: 0. 
+
+

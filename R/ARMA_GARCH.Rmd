@@ -1,0 +1,468 @@
+---
+title: "Time Series Data"
+author: "Stas Magdych"
+date: "10/2/2019"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+rm(list=ls())
+knitr::opts_chunk$set(echo = TRUE)
+library(forecast)
+library(tseries)
+require(knitr)
+library(xts)
+library(tidyverse)
+library(lubridate)
+library(FinAna)
+library(quantmod)
+library(fpp2)
+library(DT)
+library(ggfortify)
+library(psych)
+library(xtable)
+```
+
+# Markdown to break down data
+
+## Get data: 
+
+Data is extracted through Yahoo Finance API.
+
+```{r get_data,warning=FALSE,error=FALSE,message=FALSE}
+#symbol <- c("^GSPC","DJI","^IXIC","^N225")     
+# Use getSymbols to import the data
+#getSymbols(symbol, src="yahoo", auto.assign=T, from = "1900-01-01", to = Sys.time(),return.class='xts') 
+```
+
+Or, due to NA's, loaded using Excel-sheet downloads from Yahoo Finance. 
+
+```{r get_dete_csv, warning=FALSE,error=FALSE,message=FALSE,echo=FALSE}
+setwd("/home/s/Dropbox/KU/BSc Stas/R")
+save_path <- "/home/s/Dropbox/KU/BSc Stas/R/desc_stats"
+### Data prep:
+DJI_csv <-  as.xts(read.csv.zoo("data/data_returns/DJI.csv"))
+GSPC_csv <- as.xts(read.csv.zoo("data/data_returns/GSPC.csv"))
+IXIC_csv <- as.xts(read.csv.zoo("data/data_returns/IXIC.csv"))
+N225_csv <- as.xts(read.csv.zoo("data/data_returns/N225.csv"))
+```
+
+```{r summaries, warning=FALSE,error=FALSE,message=FALSE,echo=T}
+summary(DJI_csv)
+summary(GSPC_csv)
+summary(IXIC_csv)
+summary(N225_csv)
+```
+
+We see from summary of N225 that there are some "Null"s that are caused by Japanese holidays: 
+Wednesday	Apr 29	Showa Day
+Sunday	May 03	Constitution Memorial Day
+Monday	May 04	Greenery Day
+Tuesday	May 05	Children's Day 
+We approximate the NA's
+
+```{r n225_nas}
+storage.mode(N225_csv) <- "numeric"
+N225_csv <- na.omit(N225_csv)
+
+
+GSPC_csv <- GSPC_csv[which(index(GSPC_csv) >= '1985-01-01')]
+DJI_csv <- DJI_csv[which(index(DJI_csv) >= '1985-01-01')]
+IXIC_csv <- IXIC_csv[which(index(IXIC_csv) >= '1985-01-01')]
+N225_csv <- N225_csv[which(index(N225_csv) >= '1985-01-01')]
+```
+
+## Plots 
+Initial plots of the 4 series. 
+
+```{r initial_plots, echo=F,warning=FALSE,error=FALSE,message=FALSE}
+require(gridExtra)
+GSPC_plot <- autoplot(GSPC_csv$Adj.Close/1000, ts.colour = '#009999') +
+  ggtitle("S&P 500 Index", subtitle = "Adjusted Closing Price") +
+  ylab("Thousands USD") +
+  xlab("Time")+theme_bw()
+IXIC_plot <- autoplot(IXIC_csv$Adj.Close/1000,  ts.colour = '#009999') +
+  ggtitle("Nasdaq Composite", subtitle = "Adjusted Closing Price") +
+  ylab("Thousands USD") +
+  xlab("Time")+theme_bw()
+DJI_plot <- autoplot(DJI_csv$Adj.Close/1000,  ts.colour = '#009999') +
+  ggtitle("Dow Jones Industrial Average", subtitle = "Adjusted Closing Price") +
+  ylab("Thousands USD") +
+  xlab("Time")+theme_bw()
+N225_plot <- autoplot(N225_csv$Adj.Close/1000,  ts.colour = '#009999') +
+  ggtitle("Nikkei 225", subtitle = "Adjusted Closing Price") +
+  ylab("Thousands JPY") +
+  xlab("Time")+theme_bw()
+plot <- grid.arrange(GSPC_plot, IXIC_plot,DJI_plot ,N225_plot , ncol=2)
+ggsave(filename = "desc_stats/grid_plot_of_nominal_series.pdf", plot = plot, device ="pdf", dpi =500, width = 8, height = 5, units = "in")
+``` 
+
+
+## Returns
+To work with ARMA processes, our series need to be stationary. This is clearly not the case. We try to do a standard transformation to log-returns. 
+
+```{r,echo=F,warning=FALSE,error=FALSE,message=FALSE,echo=FALSE}
+
+GSPC_log <- log(GSPC_csv)
+DJI_log <- log(DJI_csv)
+IXIC_log <- log(IXIC_csv)
+N225_log <- log(N225_csv)
+
+
+GSPC_returns<- diff(GSPC_log$Adj.Close) %>% na.approx()
+DJI_returns <-  diff(DJI_log$Adj.Close) %>% na.approx()
+IXIC_returns <-  diff(IXIC_log$Adj.Close) %>% na.approx()
+N225_returns <-  diff(N225_log$Adj.Close) %>% na.approx()
+
+
+
+GSPC_plot <- autoplot(GSPC_returns, ts.colour = '#009999') +
+  ggtitle("S&P 500") +
+  ylab("Log-returns") +
+  xlab("Time")+theme_bw()
+IXIC_plot <- autoplot(IXIC_returns, ts.colour = '#009999') +
+  ggtitle("Nasdaq Composite") +
+  ylab("Log-returns") +
+  xlab("Time")+theme_bw()
+DJI_plot <- autoplot(DJI_returns, ts.colour = '#009999') +
+  ggtitle("Dow Jones Industrial Average") +
+  ylab("Log-returns") +
+  xlab("Time")+theme_bw()
+N225_plot <- autoplot(N225_returns, ts.colour = '#009999') +
+  ggtitle("Nikkei 225") +
+  ylab("Log-returns") +
+  xlab("Time")+theme_bw()
+plot <- grid.arrange(GSPC_plot, IXIC_plot,DJI_plot ,N225_plot , ncol=2)
+ggsave(filename = "desc_stats/plot_of_returns_4grid.pdf", plot = plot, device ="pdf", dpi =500, width = 8, height = 5, units = "in")
+
+
+
+GSPC_desc <- describe(GSPC_returns)
+N225_desc <- describe(N225_returns)
+DJI_desc <- describe(DJI_returns)
+IXIC_desc <- describe(IXIC_returns)
+
+desc_table <- GSPC_desc %>% rbind(N225_desc) %>% rbind(DJI_desc) %>% rbind(IXIC_desc) %>% mutate(Series = c("S&P 500","Nikkei 225", "Dow Jones", "Nasdaq")) %>% select(Series,n,min,median,mean,max,range,skew,kurtosis,sd)
+rownames(desc_table) <- NULL
+xtable(desc_table, caption = "Summary of data", digits = 5)
+
+hist1 <- ggplot(GSPC_returns, aes(x=Adj.Close)) + 
+ geom_histogram(colour="black", fill="white", binwidth =0.0015) +theme_bw()+  ggtitle("S&P 500") +
+  ylab("Frequency") +xlab("")+scale_y_log10()+geom_vline(xintercept = 0, color = "red")+xlim(c(-0.15,0.1))
+
+hist2 <- ggplot(IXIC_returns, aes(x=Adj.Close)) + 
+ geom_histogram(colour="black", fill="white", binwidth =0.0015) +theme_bw()+  ggtitle("Nasdaq Composite") +
+  ylab("Frequency") +xlab("")+scale_y_log10()+geom_vline(xintercept = 0, color = "red")+xlim(c(-0.1,0.1))
+
+hist3 <- ggplot(N225_returns, aes(x=Adj.Close)) + 
+ geom_histogram(colour="black", fill="white", binwidth =0.0015) +theme_bw()+  ggtitle("Nikkei 225") +
+  ylab("Frequency") +xlab("")+scale_y_log10()+geom_vline(xintercept = 0, color = "red")+xlim(c(-0.1,0.06))
+
+hist4 <- ggplot(DJI_returns, aes(x=Adj.Close)) + 
+ geom_histogram(colour="black", fill="white", binwidth =0.0015) +theme_bw()+  ggtitle("Dow Jones Industrial Average") +
+  ylab("Frequency") +xlab("")+scale_y_log10()+geom_vline(xintercept = 0, color = "red")+xlim(c(-0.1,0.1))
+
+
+hists <- grid.arrange(hist1, hist2,hist4 ,hist3 , ncol=2)
+ggsave(filename = "desc_stats/histogram_returns.pdf", plot = hists, device ="pdf", dpi =500, width = 8, height = 5, units = "in")
+``` 
+
+The data look more stationary than before. Although not perfect.
+
+## Autocorrelations
+
+### S&P 500
+```{r autocorrelation_plots_GSPC,echo=FALSE}
+par(mfcol = (c(1,3)))
+acf(GSPC_returns, lag.max = 50)
+acf(GSPC_returns_abs,lag.max = 100)
+pacf(GSPC_returns,lag.max = 50)
+```
+
+In the ACF plot of returns, we see that there is negative autocorrelation in the second lag. Indicative of MA(2).  
+ACF plot of absolute retruns shows decaying, but strong autocorrelation. Indicative of volatility clustering. 
+PACF plot of returns shows significant autocorrelation in second term. AR(2)? Also shows a seasonability almost?
+
+### NASDAQ
+
+```{r autocorrelation_plots_IXIC,echo=FALSE}
+par(mfcol = (c(1,3)))
+acf(IXIC_returns,lag.max = 15)
+acf(IXIC_returns_abs, lag.max = 100)
+pacf(IXIC_returns,500)
+```
+
+In the ACF plot of returns, we see that there is negative autocorrelation in the second lag. Indicative of MA(2).  
+ACF plot of absolute retruns shows decaying, but strong autocorrelation. Indicative of volatility clustering. 
+PACF plot of returns shows significant autocorrelation in second term. AR(2)? Also shows a seasonability almost?
+
+### Dow-Jones
+
+```{r autocorrelation_plots_DJI,echo=FALSE}
+par(mfcol = (c(1,3)))
+acf(DJI_returns,lag.max = 15)
+acf(DJI_returns_abs,lag.max = 100)
+pacf(DJI_returns, lag.max = 50)
+```
+In the ACF plot of returns, we see that there is negative autocorrelation in the second lag. Indicative of MA(2).  
+ACF plot of absolute retruns shows decaying, but strong autocorrelation. Indicative of volatility clustering. 
+PACF plot of returns shows significant autocorrelation in second term. AR(2)? Also shows a seasonability almost?
+
+```{r autocorrelation_plots_N225,echo=FALSE}
+par(mfcol = (c(1,3)))
+acf(N225_returns,lag.max = 15)
+acf(N225_returns_abs,lag.max = 100)
+pacf(N225_returns)
+```
+In the ACF plot of returns, we see that there is negative autocorrelation in the second lag. Indicative of MA(2).  
+ACF plot of absolute retruns shows decaying, but strong autocorrelation. Indicative of volatility clustering. 
+PACF plot of returns shows significant autocorrelation in second term. AR(2)? Also shows a seasonability almost?
+
+### Conlusions:
+
+We see that ACF plots of returns do not show a strong correlation, although lag nr.2 seems to be correlated for all 4 series. 2 series show correlations at 1 lag. At the same time absolute returns show obvious strong correlations that is a sign of volatility clustering.
+PACF of the series shows seasonal correlations. Many are strong and alternating between positive and negative. 
+ 
+## Try to select the orders:
+
+```{r aic_table_func, echo = FALSE}
+aic_table = function(dataset,P,Q){
+  table = matrix(NA,(P+1),(Q+1))
+  for (p in 0:P){
+    for (q in 0:Q){
+      table[p+1,q+1] = arima(dataset,order=c(p,0,q), method = "ML")$aic
+    }
+  }
+  dimnames(table) = list(paste("<b> AR",0:P,"</b>",sep=""),paste("MA",0:Q,sep=""))
+  
+  table
+}
+```
+
+We will try the auto.arima function from 
+
+
+```{r auto_arimas}
+model_DJI <- auto.arima(DJI_returns,  trace = TRUE, stepwise = FALSE)
+model_GSPC <- auto.arima(GSPC_returns,trace = TRUE, stepwise = FALSE)
+model_IXIC <- auto.arima(IXIC_returns,trace = TRUE, stepwise = FALSE)
+model_N225 <- auto.arima(N225_returns,trace = TRUE, stepwise = FALSE)
+
+summary(model_DJI)
+summary(model_GSPC)
+summary(model_IXIC)
+summary(model_N225)
+
+```
+All of the models are $MA(2)$ processes for the returns. 
+
+
+We can also do the AIC tables for the different series and see the other candidates:
+
+
+### SP500
+```{r aic_tables1}
+
+GSPC_aic_table = aic_table(GSPC_returns,5,5)
+print(which.min(GSPC_aic_table))
+lol_model <- arima(GSPC_returns, order = c(1,0,3))
+lol_model <- arima(GSPC_returns, order = c(2,0,0))
+plot(lol_model)
+optimal_GSPC_AIC <- GSPC_aic_table
+xtable(GSPC_aic_table)
+```
+
+From the table we see that AR(2) has the lowest AIC value. However, MA(2) har the next-lowest value. Why does auto.arima prefer MA(2)?
+
+
+
+### NASDAQ
+```{r aic_tables2}
+IXIC_aic_table = aic_table(IXIC_returns,4,4)
+print(which.min(IXIC_aic_table))
+lol_model <- arima(IXIC_returns, order = c(2,0,2))
+plot(lol_model)
+xtable(IXIC_aic_table)
+```
+
+The lowest AIC is ARMA(2,2), next-lowest in the region with lower complexity is MA(2). ARMA(2,2) is at a higher risk of overfitting than an MA(2)
+
+
+### NIKKEI
+
+```{r aic_tables3}
+N225_aic_table = aic_table(N225_returns,4,4)
+print(which.min(N225_aic_table))
+N225_aic_table[which.min(N225_aic_table)]
+xtable(N225_aic_table)
+```
+
+Clear MA(2) preference
+
+### DOW JONES
+
+```{r aic_tables4}
+DJI_aic_table = aic_table(DJI_returns,4,4)
+print(which.min(DJI_aic_table))
+xtable(DJI_aic_table)
+```
+
+Clear MA(2) preference
+
+### Do table for thesis
+
+
+```{r, table_for_thesis}
+table_4_thesis <- data.frame(Series = c("SP500","Nasdaq","Dow Jones","Nikkei "), orders = c("(2,0)","(2,2)", "(0,2)", "(0,2)"))
+xtable(table_4_thesis)
+
+```
+
+## We can perform a Box-Ljung Q-test on residuals: 
+
+$H_0$: The data are independently distributed (i.e. the correlations in the population from which the sample is taken are 0, so that any observed correlations in the data result from randomness of the sampling process). 
+$H_a$: The data are not independently distributed; they exhibit serial correlation.
+
+The test statistic is: 
+$$Q = n\left(n+2\right)\sum_{k=1}^h\frac{\hat{\rho}^2_k}{n-k}$$
+where $n$ is the sample size, $\hat{\rho}_k$ is the sample autocorrelation at lag $k$, and $h$ is the number of lags being tested. Under $H_0$ the statistic Q asymptotically follows a $\chi^2_{(h)}$. For significance level $\alpha$, the critical region for rejection of the hypothesis of randomness is:
+
+$$Q > \chi_{1-\alpha,h}^2 $$
+
+where $\chi_{1-\alpha,h}^2$ is the $1-\alpha$ quantile of the chi-squared distribution with $h$ degrees of freedom. 
+
+```{r box_ljung}
+
+Box.test(residuals(model_GSPC)^2, lag = 12,type = "Ljung-Box")
+#Box.test(residuals(model_GSPC_abs), lag = 1,type = "Ljung-Box")
+
+acf(residuals(model_GSPC)^2)
+
+Box.test(residuals(model_IXIC)^2, lag = 12,type = "Ljung-Box")
+#Box.test(IXIC_returns_abs, lag = 12,type = "Ljung-Box")
+
+Box.test(residuals(model_DJI)^2, lag = 12,type = "Ljung-Box")
+#Box.test(DJI_returns_abs, lag = 12,type = "Ljung-Box")
+
+Box.test(residuals(model_N225)^2, lag = 12,type = "Ljung-Box")
+#Box.test(N225_returns_abs, lag = 12,type = "Ljung-Box")
+
+
+``` 
+
+There is evidence for ARCH effect for all series. 
+
+
+## ARCH
+
+```{r train_function}
+
+train_model <- function(dataset){
+
+  # Different distribution assumptions:
+  m1 = garchFit(~ arma(0,2)+garch(1,1), data = dataset, trace =F,cond.dist = "snorm")
+  m2 = garchFit(~ arma(0,2)+garch(1,1), data = dataset, trace =F,cond.dist = "QMLE")
+  m3 = garchFit(~ arma(0,2)+garch(1,1), data = dataset, trace =F,cond.dist = "sstd")
+  m4 = garchFit(~ arma(0,2)+garch(1,1), data = dataset, trace =F,cond.dist = "std")
+  m5 = garchFit(~ arma(0,2)+garch(1,1), data = dataset, trace =F)
+  models <- list(m1,m2,m3,m4,m5)
+  
+  for (model in models){
+  #print(model)
+  summary(model)
+  #v1 = fBasics::volatility(model)%>% ts(frequency = 254,start = c(1985,01,29))
+  #resid = residuals(model,standardize = TRUE) %>% ts(frequency = 254,start = c(1985,01,29))
+  #
+  #ggplot2::autoplot(resid) +
+  #ggtitle("MA(2)+GARCH(1,1) residuals")  +
+  #xlab("Time")
+  #
+  #ggplot2::autoplot(v1) +
+  #ggtitle("MA(2)+GARCH(1,1) volatility") +
+  #xlab("Time")
+  
+  plot(model, which = 9)
+  plot(model, which = 11)
+  plot(model, which = 12)
+  plot(model, which = 13)
+  #par(mfcol=c(2,2))
+  #acf(resid,lag = 24)
+  #pacf(resid,lag = 24)
+  #acf(resid^2,lag = 24)
+  #pacf(resid^2,lag = 24)
+}
+    
+  
+}
+```
+
+
+### Dow Jones:
+```{r arch1}
+train_model(DJI_returns)
+```
+
+### S&P 500:
+```{r arch2}
+train_model(GSPC_returns)
+```
+
+### NASDAQ:
+```{r arch3}
+train_model(IXIC_returns)
+```
+
+### NIKKEI:
+```{r arch4}
+train_model(N225_returns)
+```
+
+We observe that the student distribution fits the data best for all datasets. 
+
+## Deeper into modelling
+
+### Dow Jones:
+```{r garch1}
+model_Dow <- garchFit(~ arma(1,1)+garch(2,1), data = DJI_returns, trace =F,cond.dist = "sstd")
+summary(model_Dow)
+
+plot(model_Dow, which = 11)
+plot(model_Dow,which=13)
+```
+
+We fit an ARMA(1,1) for the mean-value and GARCH(2,1) for the volatility. 
+From the model summary we see that our mean value specification is not perfect. This is obvious from the Ljung-Box test on the standardized residuals. The p-value os way below 0.05. This means that $H_0$: residuals are independent is rejected. 
+
+However, the same test on the Squared residuals tells us that we cannot reject the hypothesis. This means that out volatility specification seems to be a good fit. LM-Arch Test shows that there are no ARCH effects in the squared residuals. 
+
+QQ-plot shows that we have trouble fitting the extremes, but in general the fit is good. There are few extreme values when seen against the size of the whole dataset (8736 obs). 
+
+
+### S&P 500:
+```{r garch2}
+model_SP = garchFit(~ arma(1,2)+garch(1,1), data = tail(GSPC_returns,15000), trace =F,cond.dist = "sstd")
+plot(model_SP,which=13)
+plot(model_SP,which=10)
+summary(model_SP)
+```
+
+We get bad results if we take the whole dataset. This is also by far the longest series in our experiment. If we limit it to the 15000 (59 years) recent values, the fit improves dramatically. Can we make an argument towards making this cutoff? 
+Otherwise the same conclusions from the summaries
+
+### NASDAQ:
+```{r garch3}
+model_NQ = garchFit(~ arma(1,2)+garch(1,1), data = IXIC_returns, trace =F,cond.dist = "sstd")
+plot(model_NQ,which=13)
+summary(model_NQ)
+```
+This one is not perfect at all. 
+
+### NIKKEI:
+```{r garch4}
+model_NIK = garchFit(~ garch(1,1), data = N225_returns, trace =F,cond.dist = "sstd")
+summary(model_NIK)
+plot(model_NIK,which=13)
+
+```
+
+Quite good fit, however with mean-value specification problems. 

@@ -1,0 +1,10 @@
+DJI config: 
+
+
+LR : 0.000428908
+Timesteps: 31
+Num layers: 1
+Hidden dim: 9
+Dropout: 0. 
+
+
